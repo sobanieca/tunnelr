@@ -1,0 +1,70 @@
+name: Check and Publish
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-version:
+    uses: ./.github/workflows/check-version.yml
+
+  check:
+    needs: check-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno task check
+
+  publish:
+    needs: check
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx jsr publish --no-check
+
+  release:
+    needs: check
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Get version from deno.json
+        id: version
+        run: echo "version=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")" >> $GITHUB_OUTPUT
+
+      - name: Compile binaries
+        run: |
+          deno compile --no-check --allow-all --target x86_64-unknown-linux-gnu -o tunnelr-linux-x64 main.js
+          deno compile --no-check --allow-all --target aarch64-unknown-linux-gnu -o tunnelr-linux-arm64 main.js
+          deno compile --no-check --allow-all --target x86_64-apple-darwin -o tunnelr-macos-x64 main.js
+          deno compile --no-check --allow-all --target aarch64-apple-darwin -o tunnelr-macos-arm64 main.js
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            tunnelr-linux-x64
+            tunnelr-linux-arm64
+            tunnelr-macos-x64
+            tunnelr-macos-arm64

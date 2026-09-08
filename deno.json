@@ -1,0 +1,26 @@
+{
+  "name": "@sobanieca/tunnelr",
+  "description": "Expose ports of your local machine through a cheap VPS",
+  "version": "1.0.0",
+  "license": "MIT",
+  "exports": "./main.js",
+  "compilerOptions": {
+    "checkJs": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "useUnknownInCatchVariables": false
+  },
+  "fmt": {
+    "include": [".", "test/"]
+  },
+  "lint": {
+    "include": [".", "test/"],
+    "rules": {
+      "exclude": ["no-import-prefix"]
+    }
+  },
+  "tasks": {
+    "run": "deno run --allow-all main.js",
+    "check": "deno fmt --check && deno lint && deno check main.js && deno check test/test.js && cd test && deno task test"
+  }
+}
