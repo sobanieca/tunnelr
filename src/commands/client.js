@@ -1,5 +1,5 @@
 import { startClient } from "../client.js";
-import { findToken } from "../auth.js";
+import { findKey } from "../auth.js";
 import { parsePortMappings } from "../protocol.js";
 
 export default {
@@ -8,15 +8,10 @@ export default {
     if (ports.length === 0) {
       throw new Error("Give at least one port to open, example: -p 8500");
     }
-    const auth = findToken(args);
-    if (!auth) {
-      throw new Error(
-        "Auth token is missing. Pass -a <token> or --auth-file <path>, set TUNNELR_AUTH or create ~/.tunnelr/auth",
-      );
-    }
+    const key = findKey(args);
     const client = startClient({
       target: String(args._[0]),
-      auth,
+      key,
       ports,
       localHost: args.localHost,
     });

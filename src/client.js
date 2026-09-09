@@ -1,8 +1,9 @@
 import { Mux } from "./mux.js";
+import { createToken } from "./auth.js";
 import { version } from "./version.js";
 import logger from "./logger.js";
 
-const DEFAULT_CONTROL_PORT = 2500;
+const DEFAULT_CONTROL_PORT = 8500;
 const WATCHDOG_MS = 45_000;
 const MIN_RETRY_MS = 1000;
 const MAX_RETRY_MS = 30_000;
@@ -36,7 +37,7 @@ export const parseTarget = (target) => {
 /**
  * @param {{
  *   target: string,
- *   auth: string,
+ *   key: string,
  *   ports: { remote: number, local: number }[],
  *   localHost?: string,
  *   onReady?: (ports: number[]) => void,
@@ -127,11 +128,11 @@ export const startClient = (options) => {
         }
       });
 
-      ws.addEventListener("open", () => {
+      ws.addEventListener("open", async () => {
         kick();
         mux.sendControl({
           type: "hello",
-          auth: options.auth,
+          token: await createToken(options.key),
           ports: [...mappings.keys()],
           version,
         });

@@ -1,6 +1,6 @@
 import { Mux } from "./mux.js";
 import { parsePort } from "./protocol.js";
-import { tokensMatch } from "./auth.js";
+import { createTokenVerifier } from "./auth.js";
 import { cleanAddress, listenTcp } from "./net.js";
 import { version } from "./version.js";
 import logger from "./logger.js";
@@ -17,30 +17,21 @@ const json = (body, status = 200) =>
   });
 
 /**
- * Accepts the token from "Authorization: Bearer <token>", "Authorization: <token>",
- * "?auth=<token>" or a JSON body { "auth": "<token>" }.
+ * Token from "Authorization: Bearer <token>", "Authorization: <token>" or
+ * "?token=<token>".
  * @param {Request} req
  */
-const readToken = async (req) => {
+const readToken = (req) => {
   const header = req.headers.get("authorization");
   if (header) return header.replace(/^Bearer\s+/i, "").trim();
-  const query = new URL(req.url).searchParams.get("auth");
-  if (query) return query;
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    try {
-      const body = await req.json();
-      if (body && typeof body.auth === "string") return body.auth;
-    } catch {
-      // no json body
-    }
-  }
-  return "";
+  return new URL(req.url).searchParams.get("token") ?? "";
 };
 
 /**
- * @param {{ port: number, auth: string, bind?: string }} options
+ * @param {{ port: number, key: string, bind?: string }} options
  */
-export const startServer = ({ port, auth, bind }) => {
+export const startServer = ({ port, key, bind }) => {
+  const verifyToken = createTokenVerifier(key);
   /** @type {Map<number, any>} port -> tunnel */
   const tunnels = new Map();
   /** @type {Set<any>} */
@@ -140,10 +131,11 @@ export const startServer = ({ port, auth, bind }) => {
   };
 
   const handleHello = async (client, msg) => {
-    if (!tokensMatch(String(msg.auth ?? ""), auth)) {
-      logger.warn(`Client ${client.remoteAddr} sent a wrong auth token`);
-      client.mux.sendControl({ type: "error", message: "wrong auth token" });
-      client.ws.close(4001, "wrong auth token");
+    const problem = await verifyToken(msg.token);
+    if (problem) {
+      logger.warn(`Client ${client.remoteAddr} rejected: ${problem}`);
+      client.mux.sendControl({ type: "error", message: problem });
+      client.ws.close(4001, problem);
       return;
     }
     let ports;
@@ -172,7 +164,10 @@ export const startServer = ({ port, auth, bind }) => {
   const handleControl = (client, msg) => {
     switch (msg?.type) {
       case "hello":
-        if (!client.ready) handleHello(client, msg);
+        if (!client.helloSeen) {
+          client.helloSeen = true;
+          handleHello(client, msg);
+        }
         break;
       case "close":
         client.mux.close(msg.id, false);
@@ -215,6 +210,7 @@ export const startServer = ({ port, auth, bind }) => {
       /** @type {Mux} */
       mux: null,
       ports: new Set(),
+      helloSeen: false,
       ready: false,
       remoteAddr,
       helloTimer: null,
@@ -264,10 +260,8 @@ export const startServer = ({ port, auth, bind }) => {
     const match = path.match(/^\/ports(?:\/(\d+))?$/);
     if (!match) return json({ error: "not found" }, 404);
 
-    const token = await readToken(req);
-    if (!tokensMatch(token, auth)) {
-      return json({ error: "unauthorized" }, 401);
-    }
+    const problem = await verifyToken(readToken(req));
+    if (problem) return json({ error: `unauthorized: ${problem}` }, 401);
 
     if (req.method === "GET" && !match[1]) {
       return json({ ports: listTunnels() });

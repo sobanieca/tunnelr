@@ -53,15 +53,17 @@ const selfCommand = () => {
   return `${exec} run --allow-all ${Deno.mainModule}`;
 };
 
-/** @param {{ port: number, auth: string, bind?: string }} options */
-const unitFile = ({ port, auth, bind }) =>
+/** @param {{ port: number, keyPath: string, bind?: string }} options */
+const unitFile = ({ port, keyPath, bind }) =>
   `[Unit]
 Description=tunnelr server
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=${selfCommand()} -p ${port} -a ${auth}${bind ? ` --bind ${bind}` : ""}
+ExecStart=${selfCommand()} -p ${port} -a ${keyPath}${
+    bind ? ` --bind ${bind}` : ""
+  }
 Restart=always
 RestartSec=3
 Environment=HOME=/root
@@ -93,7 +95,7 @@ const waitUntilActive = async () => {
 
 /**
  * Make sure the systemd service exists, matches the given options and runs.
- * @param {{ port: number, auth: string, bind?: string }} options
+ * @param {{ port: number, keyPath: string, bind?: string }} options
  * @returns {Promise<"running" | "installed" | "updated">}
  */
 export const ensureService = async (options) => {

@@ -2,12 +2,17 @@ import { assert, assertEquals, assertNotEquals } from "jsr:@std/assert@1.0.13";
 import { startServer } from "../src/server.js";
 import { parseTarget, startClient } from "../src/client.js";
 import { parsePortMappings } from "../src/protocol.js";
-import { findOrCreateToken, findToken } from "../src/auth.js";
+import {
+  createToken,
+  createTokenVerifier,
+  findKey,
+  findOrCreateKey,
+} from "../src/auth.js";
 import logger from "../src/logger.js";
 
 logger.setQuiet(!Deno.args.includes("--verbose"));
 
-const AUTH = "test-token-123";
+const KEY = "test-key-123";
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -78,7 +83,7 @@ const connectClient = (controlPort, ports, extra = {}) =>
   new Promise((resolve) => {
     const client = startClient({
       target: `127.0.0.1:${controlPort}`,
-      auth: AUTH,
+      key: KEY,
       ports,
       ...extra,
       onReady: (openedPorts) => {
@@ -88,9 +93,9 @@ const connectClient = (controlPort, ports, extra = {}) =>
     });
   });
 
-const api = (controlPort, path, init = {}) =>
+const api = async (controlPort, path, init = {}) =>
   fetch(`http://127.0.0.1:${controlPort}${path}`, {
-    headers: { authorization: `Bearer ${AUTH}` },
+    headers: { authorization: `Bearer ${await createToken(KEY)}` },
     ...init,
   });
 
@@ -98,7 +103,7 @@ Deno.test("echo data goes through the tunnel", async () => {
   const controlPort = freePort();
   const localPort = freePort();
   const remotePort = freePort();
-  const server = startServer({ port: controlPort, auth: AUTH });
+  const server = startServer({ port: controlPort, key: KEY });
   const echo = startEcho(localPort);
   const client = await connectClient(controlPort, [
     { remote: remotePort, local: localPort },
@@ -120,7 +125,7 @@ Deno.test("large payload keeps order and size", async () => {
   const controlPort = freePort();
   const localPort = freePort();
   const remotePort = freePort();
-  const server = startServer({ port: controlPort, auth: AUTH });
+  const server = startServer({ port: controlPort, key: KEY });
   const echo = startEcho(localPort);
   const client = await connectClient(controlPort, [
     { remote: remotePort, local: localPort },
@@ -152,7 +157,7 @@ Deno.test("http server works through the tunnel", async () => {
   const controlPort = freePort();
   const localPort = freePort();
   const remotePort = freePort();
-  const server = startServer({ port: controlPort, auth: AUTH });
+  const server = startServer({ port: controlPort, key: KEY });
   const local = Deno.serve(
     { port: localPort, hostname: "127.0.0.1", onListen: () => {} },
     (req) => new Response(`you asked for ${new URL(req.url).pathname}`),
@@ -176,7 +181,7 @@ Deno.test("multiple ports, api list and delete", async () => {
   const localB = freePort();
   const remoteA = freePort();
   const remoteB = freePort();
-  const server = startServer({ port: controlPort, auth: AUTH });
+  const server = startServer({ port: controlPort, key: KEY });
   const echoA = startEcho(localA);
   const echoB = startEcho(localB);
   let stopReason = "";
@@ -205,14 +210,18 @@ Deno.test("multiple ports, api list and delete", async () => {
   assertEquals(unauthorized.status, 401);
   await unauthorized.body?.cancel();
 
-  const viaBody = await fetch(
-    `http://127.0.0.1:${controlPort}/ports/${remoteA}`,
-    {
-      method: "DELETE",
-      body: JSON.stringify({ auth: AUTH }),
-    },
+  const token = await createToken(KEY);
+  const viaQuery = await fetch(
+    `http://127.0.0.1:${controlPort}/ports/${remoteA}?token=${token}`,
+    { method: "DELETE" },
   );
-  assertEquals((await viaBody.json()).closed, remoteA);
+  assertEquals((await viaQuery.json()).closed, remoteA);
+
+  const replay = await fetch(`http://127.0.0.1:${controlPort}/ports`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assertEquals(replay.status, 401);
+  await replay.body?.cancel();
 
   const afterDelete = await (await api(controlPort, "/ports")).json();
   assertEquals(afterDelete.ports.map((p) => p.port), [remoteB]);
@@ -235,19 +244,35 @@ Deno.test("multiple ports, api list and delete", async () => {
   await server.shutdown();
 });
 
-Deno.test("wrong token is rejected", async () => {
+Deno.test("wrong key is rejected", async () => {
   const controlPort = freePort();
-  const server = startServer({ port: controlPort, auth: AUTH });
+  const server = startServer({ port: controlPort, key: KEY });
   let stopReason = "";
   const client = startClient({
     target: `127.0.0.1:${controlPort}`,
-    auth: "wrong",
+    key: "wrong",
     ports: [{ remote: freePort(), local: 1 }],
     onStop: (reason) => stopReason = reason,
   });
   await client.done;
-  assertEquals(stopReason, "wrong auth token");
+  assertEquals(stopReason, "wrong key");
   await server.shutdown();
+});
+
+Deno.test("tokens are one-time and expire", async () => {
+  const verify = createTokenVerifier(KEY, 1000);
+  const token = await createToken(KEY);
+  assertEquals(await verify(token), "");
+  assertEquals(await verify(token), "token already used");
+  assertEquals(await verify(await createToken(KEY)), "");
+  assertEquals(await verify(await createToken("other")), "wrong key");
+  assertEquals(await verify("garbage"), "malformed token");
+
+  const [, nonce, mac] = token.split(".");
+  assertEquals(await verify(`${Date.now()}.${nonce}.${mac}`), "wrong key");
+  const [, oldNonce, oldMac] = (await createToken(KEY)).split(".");
+  const expired = await verify(`${Date.now() - 5000}.${oldNonce}.${oldMac}`);
+  assert(expired.startsWith("token expired"));
 });
 
 Deno.test("new client takes over a port", async () => {
@@ -255,7 +280,7 @@ Deno.test("new client takes over a port", async () => {
   const localA = freePort();
   const localB = freePort();
   const remotePort = freePort();
-  const server = startServer({ port: controlPort, auth: AUTH });
+  const server = startServer({ port: controlPort, key: KEY });
   const localServerA = Deno.serve(
     { port: localA, hostname: "127.0.0.1", onListen: () => {} },
     () => new Response("A"),
@@ -293,7 +318,7 @@ Deno.test("client reconnects after server restart", async () => {
   const controlPort = freePort();
   const localPort = freePort();
   const remotePort = freePort();
-  let server = startServer({ port: controlPort, auth: AUTH });
+  let server = startServer({ port: controlPort, key: KEY });
   const echo = startEcho(localPort);
   let readyCount = 0;
   const client = await connectClient(controlPort, [
@@ -303,7 +328,7 @@ Deno.test("client reconnects after server restart", async () => {
   await server.shutdown();
   await waitFor(() => server.listTunnels().length === 0);
   await sleep(200);
-  server = startServer({ port: controlPort, auth: AUTH });
+  server = startServer({ port: controlPort, key: KEY });
   await waitFor(() => readyCount >= 1, 10000);
   await waitFor(() => server.listTunnels().length === 1, 10000);
 
@@ -321,7 +346,7 @@ Deno.test("client reconnects after server restart", async () => {
 Deno.test("local port down closes the visitor connection", async () => {
   const controlPort = freePort();
   const remotePort = freePort();
-  const server = startServer({ port: controlPort, auth: AUTH });
+  const server = startServer({ port: controlPort, key: KEY });
   const client = await connectClient(controlPort, [
     { remote: remotePort, local: freePort() },
   ]);
@@ -354,32 +379,35 @@ Deno.test("port parsing", () => {
   }
   assert(failed);
 
-  assertEquals(parseTarget("my-vps.com").url, "ws://my-vps.com:2500/tunnel");
+  assertEquals(parseTarget("my-vps.com").url, "ws://my-vps.com:8500/tunnel");
   assertEquals(parseTarget("my-vps.com:3000").port, 3000);
   assertEquals(
     parseTarget("wss://my-vps.com").url,
-    "wss://my-vps.com:2500/tunnel",
+    "wss://my-vps.com:8500/tunnel",
   );
   assertEquals(parseTarget("http://my-vps.com:2500/").label, "my-vps.com:2500");
   assertNotEquals(parseTarget("[::1]:2500").host, "");
 });
 
-Deno.test("auth token from --auth-file", async () => {
+Deno.test("key from -a: file path or key itself", async () => {
   const dir = await Deno.makeTempDir();
-  const path = `${dir}/token`;
-  await Deno.writeTextFile(path, "  file-token \n");
-  assertEquals(findToken({ authFile: path }), "file-token");
-  assertEquals(findToken({ auth: "flag", authFile: path }), "flag");
+  const path = `${dir}/key`;
+  await Deno.writeTextFile(path, "  file-key \n");
+  assertEquals(findKey({ auth: path }), "file-key");
+  assertEquals(findKey({ auth: "literalKey" }), "literalKey");
+  assertEquals(findOrCreateKey({ auth: path }), { key: "file-key", path });
 
   let failed = false;
   try {
-    findToken({ authFile: `${dir}/missing` });
+    findKey({ auth: `${dir}/missing` });
   } catch {
     failed = true;
   }
   assert(failed);
 
-  const created = findOrCreateToken({ authFile: `${dir}/new/token` });
-  assertEquals((await Deno.readTextFile(`${dir}/new/token`)).trim(), created);
+  const created = findOrCreateKey({ auth: `${dir}/new/key` });
+  assertEquals(created.path, `${dir}/new/key`);
+  assertEquals((await Deno.readTextFile(created.path)).trim(), created.key);
+  assertEquals(findOrCreateKey({ auth: created.path }), created);
   await Deno.remove(dir, { recursive: true });
 });

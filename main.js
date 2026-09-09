@@ -5,6 +5,7 @@ import help from "./src/commands/help.js";
 import version from "./src/commands/version.js";
 import update from "./src/commands/update.js";
 import service from "./src/commands/service.js";
+import token from "./src/commands/token.js";
 import server from "./src/commands/server.js";
 import client from "./src/commands/client.js";
 
@@ -13,6 +14,7 @@ const commands = [
   { name: "version", engine: version },
   { name: "update", engine: update },
   { name: "service", engine: service },
+  { name: "token", engine: token },
   { name: "server", engine: server },
   { name: "client", engine: client },
 ];

@@ -1,107 +1,76 @@
 # tunnelr
 
-Expose ports of your local machine through a cheap VPS (for example
-[mikr.us](https://mikr.us), less than 10 USD per year).
+Expose ports of your local machine to the internet through a cheap VPS.
 
 ```
-internet  -->  my-vps.example.com:8500  ==tunnel==>  your machine:8500
+internet  -->  my-vps.example.com:3000  ==tunnel==>  your machine:3000
 ```
 
-- One binary, no config files. Run it on the VPS as the server and on your
-  machine as the client.
-- Ports open when the client connects and close when it disconnects. You can
-  open many ports at once.
-- The client reconnects by itself. The server runs as a systemd service, so it
-  survives reboots.
-- A small HTTP API shows which ports are open.
+## Server
 
-## Quick start
+1. Buy a cheap VPS, for example [mikr.us](https://mikr.us) (less than 10 USD per
+   year!).
 
-**1. On the VPS: install and start the server**
+   > Note: Whatever server you decide to buy it is recommended to use Debian OS.
 
-```bash
-curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
-sudo tunnelr -p 2500
-```
+2. Log in to the VPS as the provider describes, then:
 
-This installs a systemd service, starts it on control port 2500 and prints the
-auth token. The service starts again after every reboot. Run the same command
-again anytime to see the connection info. Without root or systemd the server
-runs in the foreground instead.
+   a. Install `tunnelr`:
 
-**2. On your machine: open a tunnel**
+   ```bash
+   curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
+   ```
 
-```bash
-tunnelr my-vps.example.com -p 8500 -a <token>
-```
+   b. Start tunnelr (pick any port you like):
 
-Now `my-vps.example.com:8500` reaches port 8500 on your machine. Keep the
-command running. Press `Ctrl+C` to close the tunnel.
+   ```bash
+   sudo tunnelr -p 8500
+   ```
 
-## More examples
+   It prints the address and the key:
 
-```bash
-# Many ports
-tunnelr my-vps.example.com -p 8500 -p 8600
-tunnelr my-vps.example.com -p 8500,8600
+   ```
+   tunnelr server 0.1.0 - systemd service "tunnelr" installed and started
 
-# VPS port 8500 -> local port 3000
-tunnelr my-vps.example.com -p 8500:3000
+     Address:   203.0.113.10:8500
+     Key:       kD3xW9q1mZ8pR4tY7uH2cV6bN0aS5fGj
+     Key file:  /root/.secret/tunnelr-key
 
-# Server on a different control port
-tunnelr my-vps.example.com:3000 -p 8500
+   Run this command again anytime to see the address and the key.
+   ```
 
-# Keep the token out of the command line
-tunnelr my-vps.example.com -p 8500 --auth-file ~/.secrets/vps-token
-export TUNNELR_AUTH=<token>        # or save it to ~/.tunnelr/auth
-tunnelr my-vps.example.com -p 8500
-```
+Congratulations, you have your own tunnel server! It survives reboots.
 
-## HTTP API
+## Your machine
 
-The server answers on the control port. Send the token in the `Authorization`
-header, in `?auth=` or in a JSON body `{ "auth": "..." }`.
+3. Install `tunnelr`:
 
-```bash
-# List open ports
-curl -H "Authorization: Bearer <token>" http://my-vps.example.com:2500/ports
+   ```bash
+   curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
+   ```
 
-# Close a port (the client is told about it)
-curl -X DELETE -H "Authorization: Bearer <token>" http://my-vps.example.com:2500/ports/8500
-```
+4. Save the key printed by the server in a file, for example
+   `~/.secret/tunnelr-key`.
+5. Open ports of your machine to the world (use the address printed by the
+   server):
 
-There is no endpoint to add ports. The client adds them when it connects.
+   ```bash
+   tunnelr 203.0.113.10:8500 -p 3000,4000,8000 -a ~/.secret/tunnelr-key
+   ```
 
-## Service on the VPS
+Now `203.0.113.10:3000` reaches port 3000 on your machine, and so on. Keep the
+command running, `Ctrl+C` closes the tunnel.
 
-```bash
-sudo tunnelr -p 2500              # install or update, start, show info
-sudo tunnelr -p 3000              # change the control port
-sudo tunnelr service uninstall    # stop and remove
-tunnelr -p 2500 --foreground      # run without systemd
-journalctl -u tunnelr -f          # logs
-```
+## Good to know
 
-## Notes
-
-- Ports must be reachable on the VPS. On mikr.us only some ports are forwarded
-  from the public IPv4 address, so use those ports.
-- tunnelr does not encrypt the traffic between client and server. Use HTTPS or
-  SSH inside the tunnel when the data is sensitive.
-- Run `tunnelr --help` for all options.
-
-## Installation
-
-**Binary (Linux, macOS):**
-
-```bash
-curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
-```
-
-**Deno:**
-
-```bash
-deno install -g --allow-all -f -r -n tunnelr jsr:@sobanieca/tunnelr
-```
-
-**Update:** run the install command again, or `tunnelr update --deno`.
+- `-a` takes the key itself or a path to a file with it. Without `-a` tunnelr
+  reads `~/.secret/tunnelr-key`.
+- The key never travels over the network. Every request carries a one-time token
+  signed with the key, so a captured token cannot be reused.
+- `tunnelr 203.0.113.10:8500 -p 8000:3000` forwards VPS port 8000 to local
+  port 3000. `tunnelr --help` shows all options and the HTTP API.
+- On some VPS providers only some ports are forwarded from the public IPv4
+  address, use those ports.
+- tunnelr does not encrypt the traffic. Use HTTPS or SSH inside the tunnel when
+  the data is sensitive.
+- Update: run the install command again

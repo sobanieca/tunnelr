@@ -1,10 +1,12 @@
-# 1.0.0
+# 0.1.0
 
-- First release
-- Server mode (`tunnelr -p 2500`) with HTTP API to list and close ports
-- Client mode (`tunnelr <vps> -p 8500`) that opens ports on the server
-  dynamically, supports many ports and `remote:local` mapping, and reconnects by
-  itself
-- `--auth-file <path>` to read the token from any file
-- `tunnelr -p 2500` on a VPS installs and starts a systemd service, so the
-  server survives reboots; `--foreground` skips systemd
+- First prerelease
+- Server mode (`sudo tunnelr -p 8500`) installs and starts a systemd service on
+  the VPS, so the server survives reboots; `--foreground` skips systemd
+- Client mode (`tunnelr <vps> -p 3000,4000`) opens ports on the server
+  dynamically, supports `remote:local` mapping and reconnects by itself
+- Key is kept in `~/.secret/tunnelr-key` on both machines; `-a` takes the key or
+  a path to a key file
+- Every request carries a one-time token signed with the key (60 s TTL), so the
+  key never travels over the network and a captured token cannot be reused
+- HTTP API to list and close ports, `tunnelr token` prints a token for it

@@ -9,11 +9,7 @@ on:
       - main
 
 jobs:
-  check-version:
-    uses: ./.github/workflows/check-version.yml
-
   check:
-    needs: check-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

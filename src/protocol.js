@@ -1,7 +1,8 @@
 // Wire format used between tunnelr client and server over one WebSocket.
 //
 // Text frames carry JSON control messages:
-//   client -> server: { type: "hello", auth, ports: [8500, 8600], version }
+//   client -> server: { type: "hello", token, ports: [8500, 8600], version }
+//                     token is a one-time token signed with the key, see auth.js
 //   server -> client: { type: "ready", ports: [8500, 8600] }
 //   server -> client: { type: "error", message }
 //   server -> client: { type: "connect", id, port }   new visitor on a port

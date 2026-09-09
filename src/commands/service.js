@@ -10,7 +10,7 @@ export default {
     }
     if (action === "uninstall") return await uninstallService();
     throw new Error(
-      "Use: tunnelr service install [-p 2500] [-a token]  or  tunnelr service uninstall",
+      "Use: tunnelr service install [-p 8500]  or  tunnelr service uninstall",
     );
   },
   match: (args) => args._[0] === "service",
