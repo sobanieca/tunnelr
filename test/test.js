@@ -268,8 +268,11 @@ Deno.test("tokens are one-time and expire", async () => {
   assertEquals(await verify(await createToken("other")), "wrong key");
   assertEquals(await verify("garbage"), "malformed token");
 
-  const [, nonce, mac] = token.split(".");
-  assertEquals(await verify(`${Date.now()}.${nonce}.${mac}`), "wrong key");
+  const [ts, nonce, mac] = token.split(".");
+  // A different timestamp breaks the signature. Derive it from the token's own
+  // timestamp, not from Date.now(): on a fast machine the clock can still be in
+  // the same millisecond, the mac would match and the nonce check would win.
+  assertEquals(await verify(`${Number(ts) + 1}.${nonce}.${mac}`), "wrong key");
   const [, oldNonce, oldMac] = (await createToken(KEY)).split(".");
   const expired = await verify(`${Date.now() - 5000}.${oldNonce}.${oldMac}`);
   assert(expired.startsWith("token expired"));
