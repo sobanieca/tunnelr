@@ -3,7 +3,7 @@
 Expose ports of your local machine to the internet through a cheap VPS.
 
 ```
-internet  -->  my-vps.example.com:3000  ==tunnel==>  your machine:3000
+internet  -->  my-vps.example.com:30185  ==tunnel==>  your machine:3000
 ```
 
 ## Server
@@ -21,10 +21,12 @@ internet  -->  my-vps.example.com:3000  ==tunnel==>  your machine:3000
    curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
    ```
 
-   b. Start tunnelr (pick any port you like):
+   b. Check in the provider's panel which ports the VPS has open (cheap
+   providers forward only a few, mikr.us gives two, like `20185` and `30185`)
+   and start tunnelr on one of them:
 
    ```bash
-   sudo tunnelr -p 8500
+   sudo tunnelr -p 20185
    ```
 
    It prints the address and the key:
@@ -32,7 +34,7 @@ internet  -->  my-vps.example.com:3000  ==tunnel==>  your machine:3000
    ```
    tunnelr server 0.1.0 - systemd service "tunnelr" installed and started
 
-     Address:   203.0.113.10:8500
+     Address:   203.0.113.10:20185
      Key:       kD3xW9q1mZ8pR4tY7uH2cV6bN0aS5fGj
      Key file:  /root/.secret/tunnelr-key
 
@@ -51,15 +53,15 @@ Congratulations, you have your own tunnel server! It survives reboots.
 
 4. Save the key printed by the server in a file, for example
    `~/.secret/tunnelr-key`.
-5. Open ports of your machine to the world (use the address printed by the
-   server):
+5. Open a port of your machine to the world, using another open port of the VPS
+   (use the address printed by the server):
 
    ```bash
-   tunnelr 203.0.113.10:8500 -p 3000,4000,8000 -a ~/.secret/tunnelr-key
+   tunnelr 203.0.113.10:20185 -p 30185:3000 -a ~/.secret/tunnelr-key
    ```
 
-Now `203.0.113.10:3000` reaches port 3000 on your machine, and so on. Keep the
-command running, `Ctrl+C` closes the tunnel.
+Now `203.0.113.10:30185` reaches port 3000 on your machine. Keep the command
+running, `Ctrl+C` closes the tunnel.
 
 ## Good to know
 
@@ -67,10 +69,11 @@ command running, `Ctrl+C` closes the tunnel.
   reads `~/.secret/tunnelr-key`.
 - The key never travels over the network. Every request carries a one-time token
   signed with the key, so a captured token cannot be reused.
-- `tunnelr 203.0.113.10:8500 -p 8000:3000` forwards VPS port 8000 to local
-  port 3000. `tunnelr --help` shows all options and the HTTP API.
-- On some VPS providers only some ports are forwarded from the public IPv4
-  address, use those ports.
+- `-p 30185:3000` forwards VPS port 30185 to local port 3000. When the VPS has
+  all ports open, `-p 3000,4000` opens the same ports on both sides.
+  `tunnelr --help` shows all options and the HTTP API.
+- Every port tunnelr uses (the control port and each exposed port) has to be one
+  the VPS really has open, so two open ports mean one tunnel.
 - tunnelr does not encrypt the traffic. Use HTTPS or SSH inside the tunnel when
   the data is sensitive.
 - Update: run the install command again

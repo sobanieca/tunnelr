@@ -1,15 +1,16 @@
 /**
  * tunnelr - expose ports of your local machine through a cheap VPS.
  *
- * Run the server on the VPS and the client on your machine:
+ * Run the server on the VPS and the client on your machine, on ports the VPS
+ * has open:
  *
  * @example
  * ```bash
  * # On the VPS
- * tunnelr -p 2500
+ * tunnelr -p 20185
  *
  * # On your machine
- * tunnelr my-vps.example.com -p 8500
+ * tunnelr my-vps.example.com:20185 -p 30185:3000
  * ```
  */
 

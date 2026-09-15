@@ -12,6 +12,10 @@ How it works:
   3. Anyone who connects to <vps>:<port> reaches your machine. Ports open when
      the client connects and close when it disconnects.
 
+  Every port tunnelr uses (the control port and each exposed port) has to be
+  one the VPS really has open. Cheap providers forward only a few, mikr.us
+  gives two, like 20185 and 30185.
+
 Usage:
 
   tunnelr -p <control port> [options]              start the server (on the VPS)
@@ -22,7 +26,7 @@ Usage:
 
 Server (on the VPS):
 
-  sudo tunnelr -p 8500
+  sudo tunnelr -p 20185
 
   As root on Linux with systemd this installs (or updates) the "tunnelr"
   service, starts it and prints the address and the key. The service starts
@@ -38,16 +42,17 @@ Server (on the VPS):
 
 Client (on your machine):
 
+  tunnelr my-vps.example.com:20185 -p 30185:3000 -a ~/.secret/tunnelr-key
   tunnelr my-vps.example.com -p 3000 -a ~/.secret/tunnelr-key
   tunnelr my-vps.example.com -p 3000,4000,8000
   tunnelr my-vps.example.com:2500 -p 3000
-  tunnelr my-vps.example.com -p 8000:3000
 
   <host[:port]>          VPS host name or IP, control port defaults to 8500.
                          Use wss://host:port when a TLS proxy is in front.
-  -p, --port <spec>      Port to open on the VPS. Separate many with commas or
-                         repeat the flag. "remote:local" forwards VPS port
-                         "remote" to local port "local" (default: the same).
+  -p, --port <spec>      Port to open on the VPS, it must be open there.
+                         Separate many with commas or repeat the flag.
+                         "remote:local" forwards VPS port "remote" to local
+                         port "local" (default: the same).
   -a, --auth <key|file>  Key, or path to a file with the key.
                          Default: ~/.secret/tunnelr-key.
   --local-host <host>    Where local ports live (default: 127.0.0.1).
@@ -62,7 +67,7 @@ Auth:
 
 Service (on the VPS, needs root and systemd):
 
-  sudo tunnelr service install [-p 8500]   same as "sudo tunnelr -p 8500"
+  sudo tunnelr service install [-p 20185]  same as "sudo tunnelr -p 20185"
   sudo tunnelr service uninstall           stop, disable and remove the service
 
   Check it with:  systemctl status tunnelr  |  journalctl -u tunnelr -f
@@ -75,8 +80,8 @@ HTTP API (on the control port):
 
   Send a token in "Authorization: Bearer <token>" or "?token=<token>":
 
-    curl -H "Authorization: Bearer $(tunnelr token)" http://my-vps.example.com:8500/ports
-    curl -X DELETE -H "Authorization: Bearer $(tunnelr token)" http://my-vps.example.com:8500/ports/3000
+    curl -H "Authorization: Bearer $(tunnelr token)" http://my-vps.example.com:20185/ports
+    curl -X DELETE -H "Authorization: Bearer $(tunnelr token)" http://my-vps.example.com:20185/ports/3000
 
   Ports are opened by the client, so there is no POST endpoint.
 

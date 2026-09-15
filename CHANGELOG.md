@@ -1,7 +1,7 @@
 # 0.1.0
 
 - First prerelease
-- Server mode (`sudo tunnelr -p 8500`) installs and starts a systemd service on
+- Server mode (`sudo tunnelr -p 20185`) installs and starts a systemd service on
   the VPS, so the server survives reboots; `--foreground` skips systemd
 - Client mode (`tunnelr <vps> -p 3000,4000`) opens ports on the server
   dynamically, supports `remote:local` mapping and reconnects by itself
