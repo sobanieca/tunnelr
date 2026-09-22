@@ -74,6 +74,12 @@ running, `Ctrl+C` closes the tunnel.
   `tunnelr --help` shows all options and the HTTP API.
 - Every port tunnelr uses (the control port and each exposed port) has to be one
   the VPS really has open, so two open ports mean one tunnel.
+- To skip typing the address and the key every time, add a function to your
+  `~/.bashrc`, then `tunnel 3000` opens the tunnel:
+
+  ```bash
+  tunnel() { tunnelr 203.0.113.10:20185 -a ~/.secret/tunnelr-key -p "30185:$1"; }
+  ```
 - tunnelr does not encrypt the traffic. Use HTTPS or SSH inside the tunnel when
   the data is sensitive.
 - Update: run the install command again
