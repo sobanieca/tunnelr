@@ -26,7 +26,7 @@ internet  -->  my-vps.example.com:30185  ==tunnel==>  your machine:3000
    and start tunnelr on one of them:
 
    ```bash
-   sudo tunnelr -p 20185
+   sudo tunnelr server -p 20185
    ```
 
    It prints the address and the key:
@@ -74,12 +74,19 @@ running, `Ctrl+C` closes the tunnel.
   `tunnelr --help` shows all options and the HTTP API.
 - Every port tunnelr uses (the control port and each exposed port) has to be one
   the VPS really has open, so two open ports mean one tunnel.
-- To skip typing the address and the key every time, add a function to your
-  `~/.bashrc`, then `tunnel 3000` opens the tunnel:
+- To skip typing the address and the key every time, save the connection once,
+  then `tunnelr` alone opens it again:
 
   ```bash
-  tunnel() { tunnelr 203.0.113.10:20185 -a ~/.secret/tunnelr-key -p "30185:$1"; }
+  tunnelr add vps 203.0.113.10:20185 -p 30185:3000 -a ~/.secret/tunnelr-key
+  tunnelr            # opens the last used connection, here 30185:3000
+  tunnelr -p 4000    # same VPS port, local port 4000 instead
+  tunnelr ls         # list saved connections, "*" marks the last used one
+  tunnelr rm vps     # remove one
   ```
+
+  Connections are kept in `~/.config/tunnelr/connections.json` with the path to
+  the key file, not the key.
 - tunnelr does not encrypt the traffic. Use HTTPS or SSH inside the tunnel when
   the data is sensitive.
 - Update: run the install command again

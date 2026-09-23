@@ -9,6 +9,15 @@ import {
   findOrCreateKey,
 } from "../src/auth.js";
 import logger from "../src/logger.js";
+import {
+  addConnection,
+  findConnection,
+  findLastConnection,
+  loadConnections,
+  markLastConnection,
+  removeConnection,
+  resolvePorts,
+} from "../src/connections.js";
 
 logger.setQuiet(!Deno.args.includes("--verbose"));
 
@@ -413,4 +422,92 @@ Deno.test("key from -a: file path or key itself", async () => {
   assertEquals((await Deno.readTextFile(created.path)).trim(), created.key);
   assertEquals(findOrCreateKey({ auth: created.path }), created);
   await Deno.remove(dir, { recursive: true });
+});
+
+Deno.test("saved connections: add, list, last, remove", async () => {
+  const dir = await Deno.makeTempDir();
+  const path = `${dir}/sub/connections.json`;
+  assertEquals(loadConnections(path), { last: "", connections: [] });
+  assertEquals(findLastConnection(path), undefined);
+
+  const vps = addConnection(
+    { name: "vps", target: "1.2.3.4:20185", ports: ["30185:3000", "4000"] },
+    path,
+  );
+  assertEquals(vps, {
+    name: "vps",
+    target: "1.2.3.4:20185",
+    ports: ["30185:3000", "4000"],
+  });
+  addConnection(
+    { name: "home", target: "home.example.com", ports: [], auth: "~/k" },
+    path,
+  );
+  assertEquals(loadConnections(path).connections.map((c) => c.name), [
+    "vps",
+    "home",
+  ]);
+  assertEquals(findLastConnection(path).name, "home");
+  assertEquals(findConnection("home", path).auth, "~/k");
+  assertEquals(findConnection("nope", path), undefined);
+
+  markLastConnection("vps", path);
+  assertEquals(findLastConnection(path).name, "vps");
+  markLastConnection("nope", path);
+  assertEquals(findLastConnection(path).name, "vps");
+
+  // same name replaces, and becomes last
+  addConnection({ name: "home", target: "h2", ports: ["80"] }, path);
+  assertEquals(loadConnections(path).connections.length, 2);
+  assertEquals(findConnection("home", path).target, "h2");
+  assertEquals(findLastConnection(path).name, "home");
+
+  assertEquals(removeConnection("home", path).target, "h2");
+  assertEquals(findLastConnection(path).name, "vps");
+  const stat = await Deno.stat(path);
+  if (Deno.build.os !== "windows") assertEquals(stat.mode & 0o777, 0o600);
+
+  for (
+    const bad of [
+      { name: "ls", target: "x", ports: [] },
+      { name: "", target: "x", ports: [] },
+      { name: "a", target: "", ports: [] },
+      { name: "a", target: "x", ports: ["70000"] },
+    ]
+  ) {
+    let failed = false;
+    try {
+      addConnection(bad, path);
+    } catch {
+      failed = true;
+    }
+    assert(failed, `should reject ${JSON.stringify(bad)}`);
+  }
+  let failed = false;
+  try {
+    removeConnection("nope", path);
+  } catch {
+    failed = true;
+  }
+  assert(failed);
+  await Deno.remove(dir, { recursive: true });
+});
+
+Deno.test("saved connections: -p override keeps the VPS port", () => {
+  const saved = ["30185:3000", "30186"];
+  assertEquals(resolvePorts(saved, []), [
+    { remote: 30185, local: 3000 },
+    { remote: 30186, local: 30186 },
+  ]);
+  assertEquals(resolvePorts(saved, undefined), resolvePorts(saved, []));
+  assertEquals(resolvePorts(saved, ["4000"]), [{ remote: 30185, local: 4000 }]);
+  assertEquals(resolvePorts(saved, ["4000,5000", "6000"]), [
+    { remote: 30185, local: 4000 },
+    { remote: 30186, local: 5000 },
+    { remote: 6000, local: 6000 },
+  ]);
+  assertEquals(resolvePorts(saved, ["30190:80"]), [
+    { remote: 30190, local: 80 },
+  ]);
+  assertEquals(resolvePorts([], ["3000"]), [{ remote: 3000, local: 3000 }]);
 });

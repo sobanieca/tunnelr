@@ -8,6 +8,7 @@ import {
   isInsideService,
   isRoot,
   SERVICE_NAME,
+  uninstallService,
 } from "../service.js";
 import { version } from "../version.js";
 import logger from "../logger.js";
@@ -40,7 +41,7 @@ tunnelr server ${version} - ${modeLine}
 Run this command again anytime to see the address and the key.
 ${
     mode === "foreground" ? "" : `
-Logs: journalctl -u ${SERVICE_NAME} -f    Remove: sudo tunnelr service uninstall
+Logs: journalctl -u ${SERVICE_NAME} -f    Remove: sudo tunnelr server --uninstall
 `
   }`);
 };
@@ -71,9 +72,13 @@ const serviceBlocker = () => {
 
 export default {
   execute: async (args) => {
+    if (args._.length > 1) {
+      throw new Error("Use: tunnelr server [-p <control port>] [--uninstall]");
+    }
+    if (args.uninstall) return await uninstallService();
     const ports = args.port ?? [];
     if (ports.length > 1) {
-      throw new Error("Server needs one control port, example: -p 8500");
+      throw new Error("Server needs one control port, example: server -p 8500");
     }
     const port = parsePort(ports[0] ?? DEFAULT_CONTROL_PORT);
     const { key, path: keyPath } = findOrCreateKey(args);
@@ -94,5 +99,5 @@ export default {
     const mode = await ensureService(options);
     await printBanner({ port, key, keyPath, mode });
   },
-  match: (args) => args._.length === 0 && (args.port ?? []).length > 0,
+  match: (args) => args._[0] === "server",
 };

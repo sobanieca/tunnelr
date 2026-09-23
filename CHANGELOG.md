@@ -1,3 +1,15 @@
+# 0.2.0
+
+- Breaking: the server starts with `tunnelr server -p <port>` (was
+  `tunnelr -p <port>`) and `tunnelr server --uninstall` removes the systemd
+  service (was `tunnelr service uninstall`, `service install` is gone)
+- Breaking: `--local-host` is now `--to <host>`, the host the client forwards to
+  (default 127.0.0.1)
+- Saved connections: `tunnelr add <name> <vps> -p <ports>` remembers the
+  address, ports and key file, `tunnelr ls` and `tunnelr rm <name>` manage them
+- `tunnelr` alone opens the last used connection, `tunnelr <name>` a chosen one,
+  `-p <port>` changes the local port while keeping the saved VPS port
+
 # 0.1.0
 
 - First prerelease

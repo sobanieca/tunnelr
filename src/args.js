@@ -1,8 +1,8 @@
 import { deps } from "./deps.js";
 
 const args = deps.parse(Deno.args, {
-  boolean: ["help", "version", "debug", "foreground"],
-  string: ["auth", "local-host", "bind"],
+  boolean: ["help", "version", "debug", "foreground", "uninstall"],
+  string: ["auth", "to", "bind"],
   collect: ["port"],
   alias: {
     p: "port",

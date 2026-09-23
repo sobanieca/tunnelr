@@ -1,7 +1,7 @@
 {
   "name": "@sobanieca/tunnelr",
   "description": "Expose ports of your local machine through a cheap VPS",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "exports": "./main.js",
   "compilerOptions": {

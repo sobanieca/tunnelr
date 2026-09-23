@@ -18,15 +18,18 @@ How it works:
 
 Usage:
 
-  tunnelr -p <control port> [options]              start the server (on the VPS)
+  tunnelr server [-p <control port>] [options]     start the server (on the VPS)
   tunnelr <vps host[:control port]> -p <ports>     start the client (on your machine)
-  tunnelr service install|uninstall                manage the systemd service
+  tunnelr add <name> <vps host[:port]> -p <ports>  save a connection
+  tunnelr [<name>] [-p <ports>]                    open a saved connection (default: last used)
+  tunnelr ls | rm <name>                           list or remove saved connections
+  tunnelr server --uninstall                       remove the systemd service
   tunnelr token [-a <key or file>]                 print a one-time token for the HTTP API
   tunnelr help | version | update
 
 Server (on the VPS):
 
-  sudo tunnelr -p 20185
+  sudo tunnelr server -p 20185
 
   As root on Linux with systemd this installs (or updates) the "tunnelr"
   service, starts it and prints the address and the key. The service starts
@@ -39,6 +42,9 @@ Server (on the VPS):
                          there when the file is missing.
   --foreground           Do not touch systemd, run in the foreground.
   --bind <address>       Listen only on this address (default: all interfaces).
+  --uninstall            Stop, disable and remove the systemd service.
+
+  Check the service with:  systemctl status tunnelr  |  journalctl -u tunnelr -f
 
 Client (on your machine):
 
@@ -55,22 +61,33 @@ Client (on your machine):
                          port "local" (default: the same).
   -a, --auth <key|file>  Key, or path to a file with the key.
                          Default: ~/.secret/tunnelr-key.
-  --local-host <host>    Where local ports live (default: 127.0.0.1).
+  --to <host>            Host to forward to (default: 127.0.0.1). Use it when
+                         the service runs elsewhere in your LAN or in a
+                         container without a published port.
 
   The client reconnects by itself when the connection drops.
+
+Saved connections (on your machine):
+
+  tunnelr add vps 203.0.113.10:20185 -p 30185:3000 -a ~/.secret/tunnelr-key
+  tunnelr                  open the last used connection with its saved ports
+  tunnelr -p 4000          same, but forward VPS port 30185 to local port 4000
+  tunnelr vps -p 30186:80  open "vps" with other ports
+  tunnelr ls               list saved connections, "*" marks the last used one
+  tunnelr rm vps           remove one
+
+  "add" takes the same flags as the client (-p, -a, --to) and replaces
+  a connection with the same name. Flags given when opening a connection win
+  over the saved ones. A bare port in -p keeps the saved VPS port at the same
+  position and changes only the local port, "remote:local" is taken as is.
+  Connections are kept in ~/.config/tunnelr/connections.json (the key file
+  path is saved there, not the key).
 
 Auth:
 
   The key never travels over the network. Every request carries a one-time
   token signed with the key that expires after a minute, so a captured token
   cannot be reused. Both machines need a correct clock.
-
-Service (on the VPS, needs root and systemd):
-
-  sudo tunnelr service install [-p 20185]  same as "sudo tunnelr -p 20185"
-  sudo tunnelr service uninstall           stop, disable and remove the service
-
-  Check it with:  systemctl status tunnelr  |  journalctl -u tunnelr -f
 
 HTTP API (on the control port):
 

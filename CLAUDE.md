@@ -25,7 +25,7 @@ cd test && deno test -A test.js -- --verbose   # tests with tunnelr logs
 Try it locally in two terminals:
 
 ```bash
-deno task run -p 8500 --foreground        # server, prints the address and key
+deno task run server -p 8500 --foreground # server, prints the address and key
 deno task run 127.0.0.1:8500 -p 3000 -a <key>   # client (or -a <key file>)
 ```
 
@@ -38,14 +38,16 @@ deno task run 127.0.0.1:8500 -p 3000 -a <key>   # client (or -a <key file>)
 
 - `help.js` - help text, also documents the HTTP API
 - `version.js`, `update.js` - like in jsonr
-- `service.js` - `tunnelr service install|uninstall` (install is the same as
-  running the server)
-- `server.js` - `tunnelr -p <port>` (no host argument). As root on Linux with
-  systemd it calls `ensureService` (install, update or just check the unit),
-  then prints the banner with IP, key and example command and exits. Inside the
-  service (`TUNNELR_SERVICE=1` env) or with `--foreground` it runs the server in
-  the foreground. Default control port is 8500.
-- `client.js` - `tunnelr <host[:port]> -p <ports>`
+- `server.js` - `tunnelr server [-p <port>]`. As root on Linux with systemd it
+  calls `ensureService` (install, update or just check the unit), then prints
+  the banner with IP, key and example command and exits. Inside the service
+  (`TUNNELR_SERVICE=1` env) or with `--foreground` it runs the server in the
+  foreground. `--uninstall` removes the service. Default control port is 8500.
+- `client.js` - `tunnelr <host[:port]> -p <ports>`,
+  `tunnelr [<name>] [-p <ports>]` opens a saved connection (default: the last
+  used one)
+- `add.js`, `rm.js`, `ls.js` - manage saved connections (`src/connections.js`,
+  stored in `~/.config/tunnelr/connections.json`)
 - `token.js` - `tunnelr token` prints a one-time token for the HTTP API
 
 ### Core modules

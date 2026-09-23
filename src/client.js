@@ -39,14 +39,14 @@ export const parseTarget = (target) => {
  *   target: string,
  *   key: string,
  *   ports: { remote: number, local: number }[],
- *   localHost?: string,
+ *   to?: string,
  *   onReady?: (ports: number[]) => void,
  *   onStop?: (reason: string) => void,
  * }} options
  */
 export const startClient = (options) => {
   const target = parseTarget(options.target);
-  const localHost = options.localHost || "127.0.0.1";
+  const to = options.to || "127.0.0.1";
   const mappings = new Map(options.ports.map((m) => [m.remote, m.local]));
   let stopped = false;
   let retryDelay = MIN_RETRY_MS;
@@ -55,9 +55,7 @@ export const startClient = (options) => {
 
   const describe = () =>
     [...mappings]
-      .map(([remote, local]) =>
-        `${target.host}:${remote} -> ${localHost}:${local}`
-      )
+      .map(([remote, local]) => `${target.host}:${remote} -> ${to}:${local}`)
       .join(", ");
 
   const session = () =>
@@ -97,10 +95,10 @@ export const startClient = (options) => {
             logger.debug(`Visitor ${msg.id} on port ${msg.port}`);
             mux.attach(
               msg.id,
-              Deno.connect({ hostname: localHost, port: local }).catch(
+              Deno.connect({ hostname: to, port: local }).catch(
                 (err) => {
                   logger.warn(
-                    `Cannot connect to ${localHost}:${local}: ${err.message}`,
+                    `Cannot connect to ${to}:${local}: ${err.message}`,
                   );
                   throw err;
                 },
