@@ -95,6 +95,12 @@ Stream ids are assigned by the server. See the comment at the top of
 checks data flow (echo, large payload, HTTP), the API, key and token checks
 (wrong key, replay, expiry), takeover and reconnect. No snapshots.
 
+## Landing page
+
+The landing page lives in `docs/index.html`. Every time you introduce a new
+feature or change existing behavior, update the landing page as well, so it
+always reflects the current feature set.
+
 ## Versioning and release
 
 Bump the version in `deno.json` (`src/version.js` reads it from there) and add a
