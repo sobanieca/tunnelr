@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>tunnelr</title>
+    <meta name="description"
+      content="tunnelr exposes a port on your machine to the internet through a cheap VPS. One binary is both server and client. The key never crosses the wire.">
+    <link rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d6482a'/%3E%3Cpath d='M6 16h20M20 10l6 6-6 6' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap">
+    <style>
+    :root {
+      color-scheme: light;
+      --bg: #faf8f5;
+      --surface: #ffffff;
+      --surface-2: #f1ede7;
+      --ink: #1c1a17;
+      --muted: #6b655e;
+      --line: #e5dfd6;
+      --accent: #d6482a;
+      --accent-soft: #fbe3dc;
+      --ok: #1f8a4c;
+      --ok-soft: #dff3e6;
+      --bad: #b42318;
+      --bad-soft: #fde3e0;
+      --sans: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+      --mono: "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg: #141210;
+        --surface: #1c1916;
+        --surface-2: #26221e;
+        --ink: #ece7e0;
+        --muted: #a39b91;
+        --line: #322d27;
+        --accent: #f0785c;
+        --accent-soft: #46211a;
+        --ok: #5ccc85;
+        --ok-soft: #173826;
+        --bad: #f28b82;
+        --bad-soft: #4a1d19;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #141210;
+      --surface: #1c1916;
+      --surface-2: #26221e;
+      --ink: #ece7e0;
+      --muted: #a39b91;
+      --line: #322d27;
+      --accent: #f0785c;
+      --accent-soft: #46211a;
+      --ok: #5ccc85;
+      --ok-soft: #173826;
+      --bad: #f28b82;
+      --bad-soft: #4a1d19;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 17px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    code,
+    pre,
+    .mono {
+      font-family: var(--mono);
+    }
+    code.name {
+      font-weight: 600;
+      font-size: 0.94em;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      text-wrap: balance;
+      line-height: 1.12;
+    }
+    p {
+      margin: 0;
+    }
+
+    .wrap {
+      width: min(1040px, 100%);
+      margin: 0 auto;
+      padding-inline: 20px;
+    }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-block: 22px;
+    }
+    .brand {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 19px;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .gh {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      font-size: 14.5px;
+      color: var(--ink);
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .gh:hover {
+      text-decoration: none;
+      border-color: var(--accent);
+    }
+    .gh svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .hero {
+      padding-block: 30px 10px;
+      display: grid;
+      gap: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5.2vw, 50px);
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      max-width: 18ch;
+    }
+    .hero .lead {
+      font-size: 18.5px;
+      color: var(--muted);
+      max-width: 54ch;
+    }
+
+    .map {
+      margin-top: 24px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      overflow-x: auto;
+    }
+    .map svg {
+      width: 100%;
+      height: auto;
+      min-width: 560px;
+      display: block;
+      font-family: var(--mono);
+    }
+    .map .box {
+      fill: var(--surface-2);
+      stroke: var(--line);
+    }
+    .map .box.vps {
+      stroke: var(--accent);
+    }
+    .map .t {
+      fill: var(--ink);
+      font-size: 13px;
+    }
+    .map .t.small {
+      fill: var(--muted);
+      font-size: 11.5px;
+    }
+    .map .t.lbl {
+      fill: var(--muted);
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .map .link {
+      stroke: var(--line);
+      stroke-width: 2;
+      fill: none;
+    }
+    .map .tunnel {
+      stroke: var(--accent);
+      stroke-width: 2;
+      fill: none;
+      stroke-dasharray: 6 6;
+      animation: dash 1.2s linear infinite;
+    }
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -12;
+      }
+    }
+    .map .pk {
+      fill: var(--accent);
+    }
+    .map .pk.back {
+      fill: var(--ok);
+    }
+    .map .globe {
+      stroke: var(--muted);
+      fill: none;
+      stroke-width: 1.6;
+    }
+    .caption {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    .points {
+      padding-block: 52px 8px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 26px 30px;
+    }
+    .point h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .point p {
+      color: var(--muted);
+      font-size: 15.5px;
+    }
+    .point code {
+      font-size: 13px;
+      background: var(--surface-2);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .setup {
+      padding-block: 52px 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 760px) {
+      .setup {
+        grid-template-columns: 1fr;
+      }
+    }
+    .setup h2 {
+      grid-column: 1 / -1;
+      font-size: 22px;
+      font-weight: 600;
+    }
+    .col {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      min-width: 0;
+    }
+    .col h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .col h3 span {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .col pre {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.75;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .col .dim {
+      color: var(--muted);
+    }
+    .col .hl {
+      color: var(--accent);
+    }
+
+    .install {
+      padding-block: 52px 20px;
+    }
+    .install h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .cmd-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 12px 12px 16px;
+    }
+    .cmd-box code {
+      flex: 1;
+      font-size: 14px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .cmd-box button {
+      font: 500 13px var(--sans);
+      color: var(--ink);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .cmd-box button:hover {
+      border-color: var(--accent);
+    }
+    .install p {
+      font-size: 14.5px;
+      color: var(--muted);
+      margin-top: 10px;
+      max-width: 70ch;
+    }
+
+    footer {
+      padding-block: 30px 40px;
+      font-size: 14px;
+      color: var(--muted);
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--line);
+      margin-top: 30px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .map .tunnel {
+        animation: none;
+      }
+      .map .pk {
+        display: none;
+      }
+    }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <a class="brand"
+          href="https://sobanieca.github.io/tunnelr/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M15 6l6 6-6 6"/></svg> tunnelr</a>
+        <a class="gh" href="https://github.com/sobanieca/tunnelr"
+          target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+      </header>
+
+      <section class="hero">
+        <h1>Put localhost on the internet through a VPS you already pay for.</h1>
+        <p
+          class="lead"><code class="name">tunnelr</code> is one small binary. Run it as a server on a cheap VPS, run it as a client on your machine, and a public port on the VPS reaches a local port on your laptop.</p>
+
+        <div class="map"
+          aria-label="Diagram: internet visitors reach the VPS public port, which is tunneled to a port on your machine">
+          <svg viewBox="0 0 900 200" role="img">
+            <text class="t lbl" x="60" y="42"
+              text-anchor="middle">INTERNET</text>
+            <circle class="globe" cx="60" cy="100" r="30" />
+            <ellipse class="globe" cx="60" cy="100" rx="13" ry="30" />
+            <path class="globe" d="M30 100h60M38 84h44M38 116h44" />
+            <text class="t small" x="60" y="160"
+              text-anchor="middle">visitors</text>
+
+            <line class="link" x1="95" y1="100" x2="330" y2="100" />
+            <text class="t small" x="212" y="88"
+              text-anchor="middle">203.0.113.10:30185</text>
+
+            <text class="t lbl" x="450" y="42"
+              text-anchor="middle">CHEAP VPS</text>
+            <rect class="box vps" x="330" y="58" width="240" height="84"
+              rx="10" />
+            <text class="t" x="350" y="86">tunnelr server</text>
+            <text class="t small" x="350"
+              y="108">:30185  public, forwarded</text>
+            <text class="t small" x="350"
+              y="128">:20185  control (WebSocket)</text>
+
+            <path class="tunnel" d="M570 100 H700" />
+            <text class="t small" x="635" y="88"
+              text-anchor="middle">tunnel</text>
+
+            <text class="t lbl" x="785" y="42"
+              text-anchor="middle">YOUR MACHINE</text>
+            <rect class="box" x="700" y="58" width="180" height="84" rx="10" />
+            <text class="t" x="720" y="86">tunnelr client</text>
+            <text class="t small" x="720" y="108">localhost:3000</text>
+            <text class="t small" x="720"
+              y="128">behind NAT, no public IP</text>
+
+            <circle class="pk" r="5">
+              <animateMotion dur="2.4s" repeatCount="indefinite"
+                path="M95,100 H700" keyPoints="0;1" keyTimes="0;1"
+                calcMode="linear" />
+            </circle>
+            <circle class="pk back" r="5">
+              <animateMotion dur="2.4s" begin="1.2s" repeatCount="indefinite"
+                path="M700,100 H95" keyPoints="0;1" keyTimes="0;1"
+                calcMode="linear" />
+            </circle>
+          </svg>
+        </div>
+        <p
+          class="caption">A visitor hits the VPS on the public port. The server hands the connection over the tunnel to the client, which opens a TCP connection to the local port. Many connections share one WebSocket.</p>
+      </section>
+
+      <section class="points">
+        <div class="point">
+          <h3>One binary, two roles</h3>
+          <p><code>tunnelr server</code> installs itself as a systemd service and survives reboots. Without <code>server</code> it is the client.</p>
+        </div>
+        <div class="point">
+          <h3>Two open ports are enough</h3>
+          <p>Cheap providers expose a couple of ports. One is the control port, the other is your public port. That is the whole requirement.</p>
+        </div>
+        <div class="point">
+          <h3>Reconnects on its own</h3>
+          <p>Wi-Fi drops, laptop sleeps, the client backs off and comes back. A new client for the same port takes over the old one.</p>
+        </div>
+        <div class="point">
+          <h3>Saved connections</h3>
+          <p><code>tunnelr add vps …</code> once, then plain <code>tunnelr</code> reopens it. Only the path to the key file is saved.</p>
+        </div>
+      </section>
+
+      <section class="setup">
+        <h2>Setup, in full</h2>
+        <div class="col">
+          <h3>VPS <span>once</span></h3>
+          <pre><span class="dim">$</span> curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
+<span class="dim">$</span> sudo tunnelr server -p 20185
+<span class="dim">  Address:   203.0.113.10:20185
+  Key:       </span><span class="hl">kD3xW9q1mZ8pR4tY7uH2cV6bN0aS5fGj</span>
+<span class="dim">  Key file:  /root/.secret/tunnelr-key</span></pre>
+        </div>
+        <div class="col">
+          <h3>Your machine <span>whenever</span></h3>
+          <pre><span class="dim">$</span> curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
+<span class="dim">$</span> echo kD3x… &gt; ~/.secret/tunnelr-key
+<span class="dim">$</span> tunnelr 203.0.113.10:20185 -p <span class="hl">30185:3000</span>
+<span class="dim">  203.0.113.10:30185 → localhost:3000   Ctrl+C closes it</span></pre>
+        </div>
+      </section>
+
+      <section class="install">
+        <h2>Install</h2>
+        <div class="cmd-box">
+          <code
+            id="install-cmd">curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash</code>
+          <button type="button" id="copy-btn">Copy</button>
+        </div>
+        <p>Same command on the VPS and on your machine. Debian is the tested server OS. <code>tunnelr --help</code> lists every option and the small HTTP API for listing and closing ports.</p>
+      </section>
+
+      <footer>
+        <span><code class="name">tunnelr</code> · MIT license</span>
+        <a href="https://jsr.io/@sobanieca/tunnelr" target="_blank"
+          rel="noopener">jsr:@sobanieca/tunnelr</a>
+        <a href="https://github.com/sobanieca/tunnelr/releases/latest"
+          target="_blank" rel="noopener">Binaries for Linux and macOS</a>
+      </footer>
+    </div>
+
+    <script>
+    (function () {
+      var btn = document.getElementById("copy-btn");
+      var cmd = document.getElementById("install-cmd");
+      btn.addEventListener("click", function () {
+        var text = cmd.textContent;
+        function done() {
+          btn.textContent = "Copied";
+          setTimeout(function () {
+            btn.textContent = "Copy";
+          }, 1600);
+        }
+        function fallback() {
+          var range = document.createRange();
+          range.selectNodeContents(cmd);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, fallback);
+        } else fallback();
+      });
+    })();
+    </script>
+  </body>
+</html>
