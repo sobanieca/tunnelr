@@ -1,4 +1,4 @@
-name: Check and Publish
+name: Check and Release
 
 on:
   push:
@@ -13,44 +13,64 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - run: deno task check
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
+      - run: cargo verify
 
-  publish:
+  build:
     needs: check
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            asset: tunnelr-linux-x64
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            asset: tunnelr-linux-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            asset: tunnelr-macos-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            asset: tunnelr-macos-arm64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - run: npx jsr publish --no-check
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --target ${{ matrix.target }} && rustup default stable
+      - name: Install musl tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Build
+        env:
+          CC_x86_64_unknown_linux_musl: musl-gcc
+          CC_aarch64_unknown_linux_musl: musl-gcc
+        run: |
+          cargo build --release --locked --target ${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/tunnelr ${{ matrix.asset }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
 
   release:
-    needs: check
+    needs: build
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
 
-      - name: Get version from deno.json
+      - name: Get version from Cargo.toml
         id: version
-        run: echo "version=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")" >> $GITHUB_OUTPUT
+        run: echo "version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)" >> $GITHUB_OUTPUT
 
-      - name: Compile binaries
-        run: |
-          deno compile --no-check --allow-all --target x86_64-unknown-linux-gnu -o tunnelr-linux-x64 main.js
-          deno compile --no-check --allow-all --target aarch64-unknown-linux-gnu -o tunnelr-linux-arm64 main.js
-          deno compile --no-check --allow-all --target x86_64-apple-darwin -o tunnelr-macos-x64 main.js
-          deno compile --no-check --allow-all --target aarch64-apple-darwin -o tunnelr-macos-arm64 main.js
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -60,7 +80,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            tunnelr-linux-x64
-            tunnelr-linux-arm64
-            tunnelr-macos-x64
-            tunnelr-macos-arm64
+            dist/tunnelr-linux-x64
+            dist/tunnelr-linux-arm64
+            dist/tunnelr-macos-x64
+            dist/tunnelr-macos-arm64

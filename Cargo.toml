@@ -1,0 +1,26 @@
+[package]
+name = "tunnelr"
+version = "0.3.0"
+edition = "2024"
+description = "Expose ports of your local machine through a cheap VPS"
+license = "MIT"
+repository = "https://github.com/sobanieca/tunnelr"
+publish = false
+
+[dependencies]
+libc = "0.2"
+ring = "0.17"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+ureq = { version = "3.4.2", default-features = false, features = ["rustls"] }
+webpki-roots = "1"
+
+[workspace]
+members = ["xtask"]
+
+[profile.dev.package.ring]
+opt-level = 3
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

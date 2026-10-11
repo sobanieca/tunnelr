@@ -1,3 +1,22 @@
+# 0.3.0
+
+- tunnelr is rewritten in Rust and distributed only as a standalone binary
+  (static on Linux, about 3 MB). The Deno/JSR package (`jsr:@sobanieca/tunnelr`)
+  is no longer published. Install with
+  `curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash`. The wire protocol,
+  key files and saved connections are unchanged, so 0.2 clients and servers
+  work with 0.3 ones
+- `tunnelr update` downloads the latest release and replaces the binary
+  (`--deno` option removed). tunnelr checks for a new version once a day and
+  prints a notice when one is available (`TUNNELR_NO_UPDATE_CHECK=1` disables
+  it, the server inside the systemd service never checks)
+- Fix: the systemd service started by `sudo tunnelr server` now runs
+  `tunnelr server ...` (0.2.0 wrote a unit without the `server` command, so the
+  service did not start the server). Run `sudo tunnelr server -p <port>` once
+  to update the unit
+- Unknown options are reported as errors instead of being ignored
+- The help text is published at https://sobanieca.github.io/tunnelr/help.txt
+
 # 0.2.0
 
 - Breaking: the server starts with `tunnelr server -p <port>` (was
