@@ -1,0 +1,7 @@
+# Development tasks.
+[alias]
+xtask = "run --quiet --package xtask --"
+# Run tunnelr from source: cargo tunnelr <args>
+tunnelr = "run --quiet --package tunnelr --"
+# Formatting, lints and tests: run before committing.
+verify = "xtask verify"

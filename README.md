@@ -91,4 +91,46 @@ running, `Ctrl+C` closes the tunnel.
   the key file, not the key.
 - tunnelr does not encrypt the traffic. Use HTTPS or SSH inside the tunnel when
   the data is sensitive.
-- Update: run the install command again
+
+## Installation
+
+`tunnelr` is a single binary for Linux and macOS (x64 and arm64). No runtime is
+needed.
+
+```bash
+curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
+```
+
+To install to a custom location:
+
+```bash
+curl -fsSL sobanieca.github.io/tunnelr/install.sh | INSTALL_DIR=~/bin bash
+```
+
+Or download a binary (`tunnelr-linux-x64`, `tunnelr-linux-arm64`,
+`tunnelr-macos-x64`, `tunnelr-macos-arm64`) from the
+[releases page](https://github.com/sobanieca/tunnelr/releases/latest).
+
+## Updating
+
+```bash
+tunnelr update
+```
+
+This downloads the latest release and replaces the binary. If `tunnelr` is
+installed in a system directory (like `/usr/local/bin`) run
+`sudo tunnelr update`. On the VPS restart the service afterwards:
+`sudo systemctl restart tunnelr`. `tunnelr` checks for new versions once a day
+and prints a notice when one is available (set `TUNNELR_NO_UPDATE_CHECK=1` to
+disable it).
+
+### Migrating from the Deno version (0.1, 0.2)
+
+Versions up to 0.2 were distributed for Deno (`jsr:@sobanieca/tunnelr`). Remove
+the Deno installation with `deno uninstall -g tunnelr` and install the binary as
+described above. On the VPS run `sudo tunnelr server -p <port>` again, it
+updates the systemd service to the new binary. Keys, key files and saved
+connections work unchanged, and old clients and servers can talk to new ones.
+
+The full help text is available with `tunnelr --help` and at
+https://sobanieca.github.io/tunnelr/help.txt (handy to give to AI assistants).

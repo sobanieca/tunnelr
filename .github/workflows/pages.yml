@@ -29,6 +29,7 @@ jobs:
           mkdir -p _site
           cp -r docs/. _site/
           cp install.sh _site/
+          cp src/help.txt _site/help.txt
 
       - uses: actions/configure-pages@v5
 
