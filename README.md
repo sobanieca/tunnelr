@@ -101,10 +101,18 @@ needed.
 curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
 ```
 
-To install to a custom location:
+The script installs `tunnelr` to `/usr/local/bin`, for all users. If you can't
+write to `/usr/local/bin`, the script stops with an error. Run it with `sudo`:
 
 ```bash
-curl -fsSL sobanieca.github.io/tunnelr/install.sh | INSTALL_DIR=~/bin bash
+curl -fsSL sobanieca.github.io/tunnelr/install.sh | sudo bash
+```
+
+Or install to a custom location: set `INSTALL_DIR` to a directory that is on
+your `PATH`:
+
+```bash
+curl -fsSL sobanieca.github.io/tunnelr/install.sh | INSTALL_DIR=~/.local/bin bash
 ```
 
 Or download a binary (`tunnelr-linux-x64`, `tunnelr-linux-arm64`,

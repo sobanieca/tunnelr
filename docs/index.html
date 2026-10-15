@@ -499,6 +499,7 @@
           <button type="button" id="copy-btn">Copy</button>
         </div>
         <p>Same command on the VPS and on your machine: a single binary for Linux and macOS (x64 and arm64), no runtime needed. Debian is the tested server OS. Update it any time with <code>tunnelr update</code>. <code>tunnelr --help</code> lists every option and the small HTTP API for listing and closing ports.</p>
+        <p>It installs to <code>/usr/local/bin</code>, for all users. If you can't write there, run it with <code>sudo bash</code> instead of <code>bash</code>, or install to a custom location: set <code>INSTALL_DIR</code> to a directory on your <code>PATH</code>, as in <code>curl -fsSL sobanieca.github.io/tunnelr/install.sh | INSTALL_DIR=~/.local/bin bash</code>.</p>
       </section>
 
       <footer>
