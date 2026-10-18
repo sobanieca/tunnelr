@@ -16,7 +16,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-const DEFAULT_CONTROL_PORT: u16 = 8500;
+const DEFAULT_CONTROL_PORT: u16 = 4000;
 const WATCHDOG: Duration = Duration::from_secs(45);
 const MIN_RETRY: Duration = Duration::from_secs(1);
 const MAX_RETRY: Duration = Duration::from_secs(30);
@@ -346,12 +346,12 @@ mod tests {
     fn parses_targets() {
         assert_eq!(
             parse_target("my-vps.com").unwrap().url,
-            "ws://my-vps.com:8500/tunnel"
+            "ws://my-vps.com:4000/tunnel"
         );
         assert_eq!(parse_target("my-vps.com:3000").unwrap().port, 3000);
         assert_eq!(
             parse_target("wss://my-vps.com").unwrap().url,
-            "wss://my-vps.com:8500/tunnel"
+            "wss://my-vps.com:4000/tunnel"
         );
         assert_eq!(
             parse_target("http://My-VPS.com:2500/").unwrap().label,
@@ -359,7 +359,7 @@ mod tests {
         );
         let v6 = parse_target("[::1]:2500").unwrap();
         assert_eq!((v6.host.as_str(), v6.port), ("[::1]", 2500));
-        assert_eq!(parse_target("[2001:db8::1]").unwrap().port, 8500);
+        assert_eq!(parse_target("[2001:db8::1]").unwrap().port, 4000);
         assert!(parse_target("").is_err());
         assert!(parse_target("host:99999").is_err());
         assert!(parse_target("::1").is_err());

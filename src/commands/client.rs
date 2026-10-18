@@ -58,7 +58,7 @@ pub fn execute(args: &Args) -> Result<(), String> {
         ),
     };
     if ports.is_empty() {
-        return Err("Give at least one port to open, example: -p 8500".to_string());
+        return Err("Give at least one port to open, example: -p 3000".to_string());
     }
     let key = find_key(auth.as_deref())?;
     let client = start_client(ClientOptions {

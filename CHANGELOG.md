@@ -1,3 +1,11 @@
+# 0.4.0
+
+- Breaking change: the default control port is 4000 instead of 8500, for
+  `tunnelr server` and for a client target without a port. An installed
+  service keeps its port in the unit file until `sudo tunnelr server` runs
+  again without `-p`. To keep the old port, run `tunnelr server -p 8500` and
+  connect to `<host>:8500`
+
 # 0.3.0
 
 - tunnelr is rewritten in Rust and distributed only as a standalone binary

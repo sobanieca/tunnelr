@@ -34,7 +34,7 @@ Server (on the VPS):
   again after every reboot. Run the same command again anytime to see the
   address and key. Without root or systemd the server runs in the foreground.
 
-  -p, --port <port>      Control port (default 8500). The client connects to it.
+  -p, --port <port>      Control port (default 4000). The client connects to it.
   -a, --auth <key|file>  Key, or path to a file with the key. Default file:
                          ~/.secret/tunnelr-key. A new key is created and saved
                          there when the file is missing.
@@ -48,10 +48,10 @@ Client (on your machine):
 
   tunnelr my-vps.example.com:20185 -p 30185:3000 -a ~/.secret/tunnelr-key
   tunnelr my-vps.example.com -p 3000 -a ~/.secret/tunnelr-key
-  tunnelr my-vps.example.com -p 3000,4000,8000
+  tunnelr my-vps.example.com -p 3000,5000,8000
   tunnelr my-vps.example.com:2500 -p 3000
 
-  <host[:port]>          VPS host name or IP, control port defaults to 8500.
+  <host[:port]>          VPS host name or IP, control port defaults to 4000.
                          Use wss://host:port when a TLS proxy is in front.
   -p, --port <spec>      Port to open on the VPS, it must be open there.
                          Separate many with commas or repeat the flag.
@@ -69,7 +69,7 @@ Saved connections (on your machine):
 
   tunnelr add vps 203.0.113.10:20185 -p 30185:3000 -a ~/.secret/tunnelr-key
   tunnelr                  open the last used connection with its saved ports
-  tunnelr -p 4000          same, but forward VPS port 30185 to local port 4000
+  tunnelr -p 5000          same, but forward VPS port 30185 to local port 5000
   tunnelr vps -p 30186:80  open "vps" with other ports
   tunnelr ls               list saved connections, "*" marks the last used one
   tunnelr rm vps           remove one

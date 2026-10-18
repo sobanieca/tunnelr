@@ -72,7 +72,7 @@ running, `Ctrl+C` closes the tunnel.
 - The key never travels over the network. Every request carries a one-time token
   signed with the key, so a captured token cannot be reused.
 - `-p 30185:3000` forwards VPS port 30185 to local port 3000. When the VPS has
-  all ports open, `-p 3000,4000` opens the same ports on both sides.
+  all ports open, `-p 3000,5000` opens the same ports on both sides.
   `tunnelr --help` shows all options and the HTTP API.
 - Every port tunnelr uses (the control port and each exposed port) has to be one
   the VPS really has open, so two open ports mean one tunnel.
@@ -82,7 +82,7 @@ running, `Ctrl+C` closes the tunnel.
   ```bash
   tunnelr add vps 203.0.113.10:20185 -p 30185:3000 -a ~/.secret/tunnelr-key
   tunnelr            # opens the last used connection, here 30185:3000
-  tunnelr -p 4000    # same VPS port, local port 4000 instead
+  tunnelr -p 5000    # same VPS port, local port 5000 instead
   tunnelr ls         # list saved connections, "*" marks the last used one
   tunnelr rm vps     # remove one
   ```

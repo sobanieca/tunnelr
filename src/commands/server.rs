@@ -14,7 +14,7 @@ use crate::service::{self, SERVICE_NAME, ServiceOptions, ServiceState};
 use crate::signals;
 use std::path::Path;
 
-const DEFAULT_CONTROL_PORT: u16 = 8500;
+const DEFAULT_CONTROL_PORT: u16 = 4000;
 
 pub fn matches(args: &Args) -> bool {
     args.command() == Some("server")
@@ -119,7 +119,7 @@ pub fn execute(args: &Args) -> Result<(), String> {
         return service::uninstall_service();
     }
     if args.port.len() > 1 {
-        return Err("Server needs one control port, example: server -p 8500".to_string());
+        return Err("Server needs one control port, example: server -p 4000".to_string());
     }
     let port = match args.port.first() {
         Some(port) => parse_port(port)?,

@@ -31,8 +31,8 @@ TUNNELR_TEST_VERBOSE=1 cargo test   # tests with tunnelr logs
 Try it locally in two terminals:
 
 ```bash
-cargo tunnelr server -p 8500 --foreground        # server, prints the address and key
-cargo tunnelr 127.0.0.1:8500 -p 3000 -a <key>    # client (or -a <key file>)
+cargo tunnelr server -p 4000 --foreground        # server, prints the address and key
+cargo tunnelr 127.0.0.1:4000 -p 3000 -a <key>    # client (or -a <key file>)
 ```
 
 ## Architecture
@@ -48,7 +48,7 @@ code 1. Commands with more code live in `src/commands/`:
   calls `ensure_service` (install, update or just check the unit), then prints
   the banner with IP, key and example command and exits. Inside the service
   (`TUNNELR_SERVICE=1` env) or with `--foreground` it runs the server in the
-  foreground. `--uninstall` removes the service. Default control port is 8500.
+  foreground. `--uninstall` removes the service. Default control port is 4000.
 - `client.rs` - `tunnelr <host[:port]> -p <ports>`,
   `tunnelr [<name>] [-p <ports>]` opens a saved connection (default: the last
   used one)
