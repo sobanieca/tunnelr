@@ -11,7 +11,7 @@
 - tunnelr is rewritten in Rust and distributed only as a standalone binary
   (static on Linux, about 3 MB). The Deno/JSR package (`jsr:@sobanieca/tunnelr`)
   is no longer published. Install with
-  `curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash`. The wire protocol,
+  `curl -fsSL adam.sobaniec.com/tunnelr/install.sh | bash`. The wire protocol,
   key files and saved connections are unchanged, so 0.2 clients and servers
   work with 0.3 ones
 - `tunnelr update` downloads the latest release and replaces the binary
@@ -23,7 +23,7 @@
   service did not start the server). Run `sudo tunnelr server -p <port>` once
   to update the unit
 - Unknown options are reported as errors instead of being ignored
-- The help text is published at https://sobanieca.github.io/tunnelr/help.txt
+- The help text is published at https://adam.sobaniec.com/tunnelr/help.txt
 
 # 0.2.0
 

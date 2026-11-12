@@ -1,6 +1,6 @@
 # tunnelr
 
-Website: https://sobanieca.github.io/tunnelr/
+Website: https://adam.sobaniec.com/tunnelr/
 
 Expose ports of your local machine to the internet through a cheap VPS.
 
@@ -20,7 +20,7 @@ internet  -->  my-vps.example.com:30185  ==tunnel==>  your machine:3000
    a. Install `tunnelr`:
 
    ```bash
-   curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
+   curl -fsSL adam.sobaniec.com/tunnelr/install.sh | bash
    ```
 
    b. Check in the provider's panel which ports the VPS has open (cheap
@@ -50,7 +50,7 @@ Congratulations, you have your own tunnel server! It survives reboots.
 3. Install `tunnelr`:
 
    ```bash
-   curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
+   curl -fsSL adam.sobaniec.com/tunnelr/install.sh | bash
    ```
 
 4. Save the key printed by the server in a file, for example
@@ -98,21 +98,21 @@ running, `Ctrl+C` closes the tunnel.
 needed.
 
 ```bash
-curl -fsSL sobanieca.github.io/tunnelr/install.sh | bash
+curl -fsSL adam.sobaniec.com/tunnelr/install.sh | bash
 ```
 
 The script installs `tunnelr` to `/usr/local/bin`, for all users. If you can't
 write to `/usr/local/bin`, the script stops with an error. Run it with `sudo`:
 
 ```bash
-curl -fsSL sobanieca.github.io/tunnelr/install.sh | sudo bash
+curl -fsSL adam.sobaniec.com/tunnelr/install.sh | sudo bash
 ```
 
 Or install to a custom location: set `INSTALL_DIR` to a directory that is on
 your `PATH`:
 
 ```bash
-curl -fsSL sobanieca.github.io/tunnelr/install.sh | INSTALL_DIR=~/.local/bin bash
+curl -fsSL adam.sobaniec.com/tunnelr/install.sh | INSTALL_DIR=~/.local/bin bash
 ```
 
 Or download a binary (`tunnelr-linux-x64`, `tunnelr-linux-arm64`,
@@ -141,4 +141,4 @@ updates the systemd service to the new binary. Keys, key files and saved
 connections work unchanged, and old clients and servers can talk to new ones.
 
 The full help text is available with `tunnelr --help` and at
-https://sobanieca.github.io/tunnelr/help.txt (handy to give to AI assistants).
+https://adam.sobaniec.com/tunnelr/help.txt (handy to give to AI assistants).

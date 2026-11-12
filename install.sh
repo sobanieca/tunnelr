@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 REPO="sobanieca/tunnelr"
 DEFAULT_INSTALL_DIR="/usr/local/bin"
 BINARY_NAME="tunnelr"
-SCRIPT_URL="sobanieca.github.io/tunnelr/install.sh"
+SCRIPT_URL="adam.sobaniec.com/tunnelr/install.sh"
 
 usage() {
   cat <<USAGE

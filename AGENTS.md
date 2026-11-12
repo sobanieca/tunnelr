@@ -101,7 +101,7 @@ Everything uses blocking sockets and threads, there is no async runtime.
   output, `NO_COLOR=1` disables colors.
 - `src/json.rs`, `src/time.rs`, `src/colors.rs` - JSON, clock and ANSI helpers.
 - `src/help.txt` - the help text (also published at
-  https://sobanieca.github.io/tunnelr/help.txt).
+  https://adam.sobaniec.com/tunnelr/help.txt).
 
 ### Protocol
 
