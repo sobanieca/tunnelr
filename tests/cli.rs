@@ -25,8 +25,7 @@ fn command(home: &Path, args: &[&str]) -> Command {
         .env("HOME", home)
         .env("NO_COLOR", "1")
         .env("TUNNELR_NO_UPDATE_CHECK", "1")
-        .env_remove("TUNNELR_SERVICE")
-        .env_remove("XDG_CACHE_HOME");
+        .env_remove("TUNNELR_SERVICE");
     command
 }
 
@@ -77,11 +76,19 @@ fn invalid_arguments() {
 
     let (code, out) = run(&home, &["1.2.3.4", "-p", "70000"]);
     assert_eq!(code, 1);
-    assert!(out.contains("Invalid port: 70000"), "{out}");
+    assert!(out.contains("Invalid public port: 70000"), "{out}");
 
     let (code, out) = run(&home, &["server", "-p", "1", "-p", "2"]);
     assert_eq!(code, 1);
-    assert!(out.contains("Server needs one control port"), "{out}");
+    assert!(out.contains("Server needs one tunnel port"), "{out}");
+
+    let (code, out) = run(&home, &["server", "-p", "1", "--tunnel-port", "2"]);
+    assert_eq!(code, 1);
+    assert!(out.contains("Server needs one tunnel port"), "{out}");
+
+    let (code, out) = run(&home, &["1.2.3.4", "--tunnel-port", "20185", "-p", "3000"]);
+    assert_eq!(code, 1);
+    assert!(out.contains("--tunnel-port is a server option"), "{out}");
 }
 
 #[test]
@@ -119,13 +126,14 @@ fn saved_connections() {
     );
 
     let (_, out) = run(&home, &["ls"]);
-    let path = home.join(".config/tunnelr/connections.json");
+    let path = home.join(".tunnelr/connections.json");
     assert_eq!(
         out,
         format!(
             "  vps       203.0.113.10:20185 -p 30185:3000  -a ~/.secret/k\n\
              * home-lab  10.0.0.5 -p 80,443  --to 192.168.1.20\n\n\
-             * last used, \"tunnelr\" opens it. Saved in {}\n",
+             * last used, \"tunnelr\" opens it. Ports: <vps host>:<tunnel port> -p <public port>:<app port>\n\
+             Saved in {}\n",
             path.display()
         )
     );
@@ -155,7 +163,7 @@ fn token() {
     let home = temp_home("token");
     let (code, out) = run(&home, &["token"]);
     assert_eq!(code, 1);
-    assert!(out.contains("tunnelr-key is missing or empty"), "{out}");
+    assert!(out.contains(".tunnelr/key is missing or empty"), "{out}");
 
     let (code, out) = run(&home, &["token", "-a", "some-key"]);
     assert_eq!(code, 0);
@@ -245,7 +253,7 @@ fn server_and_client_processes() {
         .unwrap(),
     );
     wait_for_port(control);
-    let key = std::fs::read_to_string(home.join(".secret/tunnelr-key")).unwrap();
+    let key = std::fs::read_to_string(home.join(".tunnelr/key")).unwrap();
     assert_eq!(key.trim().len(), 32);
 
     let target = format!("127.0.0.1:{control}");

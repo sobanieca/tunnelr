@@ -178,12 +178,12 @@ mod tests {
     fn unit_runs_the_server_command() {
         let options = ServiceOptions {
             port: 20185,
-            key_path: Path::new("/root/.secret/tunnelr-key"),
+            key_path: Path::new("/root/.tunnelr/key"),
             bind: Some("::"),
         };
         let unit = unit_file(&options, Path::new("/usr/local/bin/tunnelr"));
         assert!(unit.contains(
-            "ExecStart=/usr/local/bin/tunnelr server -p 20185 -a /root/.secret/tunnelr-key --bind ::\n"
+            "ExecStart=/usr/local/bin/tunnelr server -p 20185 -a /root/.tunnelr/key --bind ::\n"
         ));
         assert!(unit.contains("Environment=TUNNELR_SERVICE=1\n"));
     }

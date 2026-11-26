@@ -1,9 +1,9 @@
 //! Saved connections: name -> VPS address, ports and key, kept in
-//! ~/.config/tunnelr/connections.json so "tunnelr" alone can open the last
+//! ~/.tunnelr/connections.json so "tunnelr" alone can open the last
 //! used tunnel again. The key is not copied here, only the -a value as given
 //! (usually a path to the key file).
 
-use crate::auth::{home, write_private_file};
+use crate::auth::{data_dir, write_private_file};
 use crate::client::parse_target;
 use crate::json::{self, Value};
 use crate::protocol::{Mapping, parse_port_mappings, split_port_list};
@@ -33,10 +33,7 @@ pub struct Store {
 }
 
 pub fn connections_path() -> PathBuf {
-    home()
-        .join(".config")
-        .join("tunnelr")
-        .join("connections.json")
+    data_dir().join("connections.json")
 }
 
 fn string_field(value: &Value, name: &str) -> Option<String> {

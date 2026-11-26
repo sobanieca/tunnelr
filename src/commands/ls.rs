@@ -13,7 +13,7 @@ pub fn execute() {
     let store = connections::load(&path);
     if store.connections.is_empty() {
         logger::plain(
-            "No saved connections. Add one with:\n  tunnelr add <name> <vps host[:port]> -p <ports> [-a <key or file>]",
+            "No saved connections. Add one with:\n  tunnelr add <name> <vps host[:tunnel port]> -p <public port>[:<app port>] [-a <key or file>]",
         );
         return;
     }
@@ -49,7 +49,7 @@ pub fn execute() {
         })
         .collect();
     logger::plain(format!(
-        "{}\n\n* last used, \"tunnelr\" opens it. Saved in {}",
+        "{}\n\n* last used, \"tunnelr\" opens it. Ports: <vps host>:<tunnel port> -p <public port>:<app port>\nSaved in {}",
         lines.join("\n"),
         path.display()
     ));

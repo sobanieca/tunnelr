@@ -1,4 +1,5 @@
-//! `tunnelr add <name> <host[:port]> -p <ports> [-a <key|file>] [--to <host>]`
+//! `tunnelr add <name> <host[:tunnel port]> -p <public port>[:<app port>]
+//! [-a <key|file>] [--to <host>]`
 
 use crate::args::Args;
 use crate::connections::{self, Connection};
@@ -9,9 +10,10 @@ pub fn matches(args: &Args) -> bool {
 }
 
 pub fn execute(args: &Args) -> Result<(), String> {
+    crate::commands::client::reject_tunnel_port(args)?;
     let (Some(name), Some(target)) = (args.arg(1), args.arg(2)) else {
         return Err(
-            "Use: tunnelr add <name> <vps host[:port]> -p <ports> [-a <key or file>]".to_string(),
+            "Use: tunnelr add <name> <vps host[:tunnel port]> -p <public port>[:<app port>] [-a <key or file>]".to_string(),
         );
     };
     let path = connections::connections_path();

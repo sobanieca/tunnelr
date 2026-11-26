@@ -1,3 +1,28 @@
+# 0.5.0
+
+- Breaking change: tunnelr keeps everything in `~/.tunnelr`. The default key
+  file is `~/.tunnelr/key` instead of `~/.secret/tunnelr-key`, saved
+  connections are in `~/.tunnelr/connections.json` instead of
+  `~/.config/tunnelr`, and the update check is no longer in `~/.cache`
+- The three ports have clear names everywhere (help, messages, README, landing
+  page): the **tunnel port** on the VPS that the client connects to, the
+  **public port** on the VPS that visitors open, and the **app port** on your
+  machine. `tunnelr server --tunnel-port <port>` is a new long form of
+  `server -p`. The server banner shows the tunnel port and an example client
+  command, the client prints each `public port -> app port` when the tunnel
+  opens, and errors name the port they are about
+- A `-p` value with more than one `:` (like `1:2:3`) is now an error instead of
+  ignoring the rest
+
+# 0.4.1
+
+- The install script installs tunnelr to `~/.tunnelr/bin`, with no `sudo`
+  needed, and asks to add that folder to `PATH` in your shell's startup file.
+  Run as root (`curl ... | sudo bash`, as on the VPS) it installs to
+  `/usr/local/bin`
+- The arm64 Linux binary is a static-pie executable, so it also runs in Termux
+  on Android
+
 # 0.4.0
 
 - Breaking change: the default control port is 4000 instead of 8500, for

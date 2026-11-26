@@ -1,4 +1,4 @@
-//! The tunnelr server: one control port for the HTTP API and the WebSocket
+//! The tunnelr server: one tunnel port for the HTTP API and the WebSocket
 //! of the clients, plus one listener for every port a client opened. When a
 //! client asks for a port that is already open, the old tunnel is closed and
 //! the new client takes over.
@@ -105,7 +105,7 @@ pub struct Server {
 
 pub fn start_server(options: ServerOptions) -> Result<Server, String> {
     let listener = net::listen_tcp(options.port, options.bind.as_deref())
-        .map_err(|err| format!("Cannot listen on port {}: {err}", options.port))?;
+        .map_err(|err| format!("Cannot listen on tunnel port {}: {err}", options.port))?;
     let state = Arc::new(State {
         port: options.port,
         bind: options.bind,
@@ -143,7 +143,7 @@ impl Server {
         self.state.close_tunnel(port, reason)
     }
 
-    /// Disconnects all clients, closes all ports and the control port.
+    /// Disconnects all clients, closes all ports and the tunnel port.
     pub fn shutdown(&self) {
         let clients: Vec<Arc<Client>> = self
             .state
@@ -309,7 +309,7 @@ impl State {
             "closed",
             vec![("port", port.into()), ("reason", reason.into())],
         ));
-        logger::info(format!("Port {port} closed ({reason})"));
+        logger::info(format!("Public port {port} closed ({reason})"));
         if no_ports_left && client.ready.load(Ordering::SeqCst) {
             // give the client a moment to read the message and close by itself
             let client = client.clone();
@@ -363,7 +363,7 @@ impl State {
                     for port in opened {
                         self.close_tunnel(port, "rolled back");
                     }
-                    return Err(format!("Cannot open port {port}: {err}"));
+                    return Err(format!("Cannot open public port {port} on the VPS: {err}"));
                 }
             };
             let stats = Arc::new(Stats::default());
@@ -454,7 +454,7 @@ impl State {
         ));
         let list: Vec<String> = ports.iter().map(u16::to_string).collect();
         logger::info(format!(
-            "Client {} opened port(s) {}",
+            "Client {} opened public port(s) {}",
             client.remote_addr,
             list.join(", ")
         ));
@@ -467,7 +467,7 @@ impl State {
             .cloned()
             .unwrap_or_default();
         if requested.is_empty() {
-            return Err("no ports requested".to_string());
+            return Err("no public ports requested".to_string());
         }
         let mut ports: Vec<u16> = Vec::new();
         for value in requested {
@@ -478,7 +478,7 @@ impl State {
         }
         if ports.contains(&self.port) {
             return Err(format!(
-                "port {} is used by the tunnelr server itself",
+                "port {} is the tunnel port of this server, choose another public port",
                 self.port
             ));
         }
@@ -524,7 +524,7 @@ impl State {
             };
             if let Some(tunnel) = removed {
                 tunnel.stop_listener();
-                logger::info(format!("Port {port} closed (client disconnected)"));
+                logger::info(format!("Public port {port} closed (client disconnected)"));
             }
         }
         client.mux.close_all_streams();

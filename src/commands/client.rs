@@ -1,5 +1,6 @@
-//! `tunnelr <host[:port]> -p <ports>`, `tunnelr <name> [-p <ports>]` opens a
-//! saved connection and `tunnelr [-p <ports>]` opens the last used one.
+//! `tunnelr <host[:tunnel port]> -p <public port>[:<app port>]`,
+//! `tunnelr <name> [-p <ports>]` opens a saved connection and
+//! `tunnelr [-p <ports>]` opens the last used one.
 
 use crate::args::Args;
 use crate::auth::find_key;
@@ -22,7 +23,18 @@ pub fn matches(args: &Args) -> bool {
     }
 }
 
+/// `--tunnel-port` is for the server, the client takes it in the address.
+pub fn reject_tunnel_port(args: &Args) -> Result<(), String> {
+    match &args.tunnel_port {
+        Some(port) => Err(format!(
+            "--tunnel-port is a server option. On the client put the tunnel port in the address: <vps host>:{port}"
+        )),
+        None => Ok(()),
+    }
+}
+
 pub fn execute(args: &Args) -> Result<(), String> {
+    reject_tunnel_port(args)?;
     let path = connections::connections_path();
     let name = args.arg(0);
     let saved = match name {
@@ -31,7 +43,7 @@ pub fn execute(args: &Args) -> Result<(), String> {
     };
     if name.is_none() && saved.is_none() {
         return Err(
-            "No saved connection to open. Use: tunnelr <vps host[:port]> -p <ports>, tunnelr add <name> <vps host[:port]> -p <ports>, or tunnelr server -p <port>"
+            "No saved connection to open. Use: tunnelr <vps host[:tunnel port]> -p <public port>[:<app port>], tunnelr add <name> <vps host[:tunnel port]> -p <public port>[:<app port>], or tunnelr server -p <tunnel port>"
                 .to_string(),
         );
     }
@@ -58,7 +70,10 @@ pub fn execute(args: &Args) -> Result<(), String> {
         ),
     };
     if ports.is_empty() {
-        return Err("Give at least one port to open, example: -p 3000".to_string());
+        return Err(
+            "Give at least one port to open: -p <public port>[:<app port>], example: -p 30185:3000"
+                .to_string(),
+        );
     }
     let key = find_key(auth.as_deref())?;
     let client = start_client(ClientOptions {

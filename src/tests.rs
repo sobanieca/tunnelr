@@ -316,13 +316,13 @@ fn wrong_key_is_rejected() {
 }
 
 #[test]
-fn control_port_cannot_be_opened() {
+fn tunnel_port_cannot_be_opened() {
     let control = free_port();
     let server = server(control);
     let (client, _) = client_with(control, KEY, &[(control, 1)]);
     assert_eq!(
         client.wait(),
-        format!("port {control} is used by the tunnelr server itself")
+        format!("port {control} is the tunnel port of this server, choose another public port")
     );
     server.shutdown();
 }

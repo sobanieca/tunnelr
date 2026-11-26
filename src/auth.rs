@@ -44,8 +44,14 @@ pub fn home() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("."))
 }
 
+/// `~/.tunnelr`: the key, the saved connections and the update check, next to
+/// the `bin` folder that `install.sh` installs tunnelr to.
+pub fn data_dir() -> PathBuf {
+    home().join(".tunnelr")
+}
+
 pub fn default_key_path() -> PathBuf {
-    home().join(".secret").join("tunnelr-key")
+    data_dir().join("key")
 }
 
 fn expand_home(path: &str) -> PathBuf {
@@ -73,7 +79,7 @@ pub struct ResolvedKey {
 }
 
 /// Resolves the -a value: a path to a key file, the key itself, or nothing
-/// (then ~/.secret/tunnelr-key).
+/// (then ~/.tunnelr/key).
 pub fn resolve_key(auth: Option<&str>) -> ResolvedKey {
     let value = auth.unwrap_or_default().trim();
     if value.is_empty() {
@@ -118,7 +124,7 @@ pub fn find_key(auth: Option<&str>) -> Result<String, String> {
 
 /// Server side: uses the key from -a or the key file, creates and saves a new
 /// one when there is none. A key given directly is saved to
-/// ~/.secret/tunnelr-key. Returns the key and the file it is saved in.
+/// ~/.tunnelr/key. Returns the key and the file it is saved in.
 pub fn find_or_create_key(auth: Option<&str>) -> Result<(String, PathBuf), String> {
     let resolved = resolve_key(auth);
     let target = resolved.path.unwrap_or_else(default_key_path);

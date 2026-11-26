@@ -16,7 +16,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-const DEFAULT_CONTROL_PORT: u16 = 4000;
+const DEFAULT_TUNNEL_PORT: u16 = 4000;
 const WATCHDOG: Duration = Duration::from_secs(45);
 const MIN_RETRY: Duration = Duration::from_secs(1);
 const MAX_RETRY: Duration = Duration::from_secs(30);
@@ -65,7 +65,7 @@ pub fn parse_target(target: &str) -> Result<Target, String> {
         return Err(invalid());
     }
     let port = match port {
-        None | Some("") => DEFAULT_CONTROL_PORT,
+        None | Some("") => DEFAULT_TUNNEL_PORT,
         Some(port) => port.parse::<u16>().map_err(|_| invalid())?,
     };
     let host = host.to_ascii_lowercase();
@@ -248,9 +248,19 @@ fn session(
             *retry = MIN_RETRY;
             let describe: Vec<String> = mappings
                 .iter()
-                .map(|(remote, local)| format!("{}:{remote} -> {to}:{local}", target.host))
+                .map(|(remote, local)| {
+                    format!(
+                        "\n  {}:{remote} -> {to}:{local}   (public port {remote} -> app port {local})",
+                        target.host
+                    )
+                })
                 .collect();
-            logger::info(format!("Tunnel is open: {}", describe.join(", ")));
+            logger::info(format!(
+                "Tunnel is open (tunnel port {} on {}):{}",
+                target.port,
+                target.host,
+                describe.concat()
+            ));
             if let Some(on_ready) = &options.on_ready {
                 let ports = msg
                     .get("ports")
@@ -290,7 +300,9 @@ fn session(
                 id,
                 Box::new(move || {
                     net::connect(&to, local).inspect_err(|err| {
-                        logger::warn(format!("Cannot connect to {to}:{local}: {err}"));
+                        logger::warn(format!(
+                            "Cannot connect to app port {local} on {to}, is your app running? {err}"
+                        ));
                     })
                 }),
                 None,
@@ -310,9 +322,9 @@ fn session(
                 .get("reason")
                 .map(Value::to_plain_string)
                 .unwrap_or_default();
-            logger::warn(format!("Port {port} was closed by server: {reason}"));
+            logger::warn(format!("Public port {port} was closed by server: {reason}"));
             if mappings.is_empty() {
-                close_reason = "all ports were closed by server".to_string();
+                close_reason = "all public ports were closed by server".to_string();
                 shared.set_stopped();
                 handler_mux.close(1000, "");
             }

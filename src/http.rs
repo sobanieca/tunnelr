@@ -1,4 +1,4 @@
-//! Just enough HTTP/1.1 for the control port: read a request head, answer
+//! Just enough HTTP/1.1 for the tunnel port: read a request head, answer
 //! with JSON and close the connection.
 
 use crate::json::{self, Value};

@@ -69,18 +69,25 @@ pub fn split_port_list(values: &[String]) -> Vec<String> {
         .collect()
 }
 
-/// Parses `-p` values like "8500", "8500,8600" or "8500:3000" (remote:local).
+/// Parses `-p` values like "8500", "8500,8600" or "8500:3000"
+/// (public port on the VPS : app port on your machine).
 pub fn parse_port_mappings(values: &[String]) -> Result<Vec<Mapping>, String> {
     let mut mappings: Vec<Mapping> = Vec::new();
     for item in split_port_list(values) {
         let mut parts = item.split(':');
-        let remote = parse_port(parts.next().unwrap_or_default())?;
+        let public = parts.next().unwrap_or_default();
+        let remote = parse_port(public).map_err(|_| format!("Invalid public port: {public}"))?;
         let local = match parts.next() {
-            Some(local) => parse_port(local)?,
+            Some(app) => parse_port(app).map_err(|_| format!("Invalid app port: {app}"))?,
             None => remote,
         };
+        if parts.next().is_some() {
+            return Err(format!(
+                "Invalid port mapping: {item}, use <public port>[:<app port>]"
+            ));
+        }
         if mappings.iter().any(|m| m.remote == remote) {
-            return Err(format!("Port {remote} was given more than once"));
+            return Err(format!("Public port {remote} was given more than once"));
         }
         mappings.push(Mapping { remote, local });
     }
@@ -125,8 +132,16 @@ mod tests {
         assert!(parse_port_mappings(&strings(&["0"])).is_err());
         assert!(parse_port_mappings(&strings(&["abc"])).is_err());
         assert_eq!(
+            parse_port_mappings(&strings(&["8500:x"])),
+            Err("Invalid app port: x".to_string())
+        );
+        assert_eq!(
+            parse_port_mappings(&strings(&["1:2:3"])),
+            Err("Invalid port mapping: 1:2:3, use <public port>[:<app port>]".to_string())
+        );
+        assert_eq!(
             parse_port_mappings(&strings(&["80,80:3000"])),
-            Err("Port 80 was given more than once".to_string())
+            Err("Public port 80 was given more than once".to_string())
         );
     }
 }

@@ -35,6 +35,17 @@ cargo tunnelr server -p 4000 --foreground        # server, prints the address an
 cargo tunnelr 127.0.0.1:4000 -p 3000 -a <key>    # client (or -a <key file>)
 ```
 
+## Ports
+
+Always use the same three names in code, messages and docs:
+
+- **tunnel port** - on the VPS, one per server, the client connects to it
+  (`server -p`, client `<host>:<port>`). Not "control port".
+- **public port** - on the VPS, one per forward, visitors connect to it (left
+  side of client `-p`, `Mapping::remote`).
+- **app port** - on the local machine or the `--to` host, where the app
+  listens (right side of client `-p`, `Mapping::local`).
+
 ## Architecture
 
 ### Entry point and commands
@@ -44,16 +55,16 @@ help, version, update, token, add, rm, ls, server, otherwise the client (or the
 help when there is nothing to open). Errors are logged and tunnelr exits with
 code 1. Commands with more code live in `src/commands/`:
 
-- `server.rs` - `tunnelr server [-p <port>]`. As root on Linux with systemd it
+- `server.rs` - `tunnelr server [-p <tunnel port>]`. As root on Linux with systemd it
   calls `ensure_service` (install, update or just check the unit), then prints
   the banner with IP, key and example command and exits. Inside the service
   (`TUNNELR_SERVICE=1` env) or with `--foreground` it runs the server in the
-  foreground. `--uninstall` removes the service. Default control port is 4000.
-- `client.rs` - `tunnelr <host[:port]> -p <ports>`,
+  foreground. `--uninstall` removes the service. Default tunnel port is 4000.
+- `client.rs` - `tunnelr <host[:tunnel port]> -p <public port>[:<app port>]`,
   `tunnelr [<name>] [-p <ports>]` opens a saved connection (default: the last
   used one)
 - `add.rs`, `rm.rs`, `ls.rs` - manage saved connections (`src/connections.rs`,
-  stored in `~/.config/tunnelr/connections.json`)
+  stored in `~/.tunnelr/connections.json`)
 
 `tunnelr token` prints a one-time token for the HTTP API, `tunnelr update`
 (`src/update.rs`) replaces the binary with the latest GitHub release, and
@@ -65,7 +76,7 @@ disables it, it never runs inside the service).
 Everything uses blocking sockets and threads, there is no async runtime.
 
 - `src/server.rs` - `start_server(ServerOptions { port, key, bind })`. Accepts
-  connections on the control port, handles the HTTP API (`GET /ports`,
+  connections on the tunnel port, handles the HTTP API (`GET /ports`,
   `DELETE /ports/:port`, `GET /`, see `src/http.rs`) and the WebSocket upgrade
   on `/tunnel`. Keeps a map of open tunnels (port -> listener thread, client,
   stats). When a client asks for a port that is already open, the old tunnel is
@@ -82,9 +93,9 @@ Everything uses blocking sockets and threads, there is no async runtime.
 - `src/websocket.rs` - RFC 6455 framing, the client handshake and the TLS
   split for `wss://` (read and write halves sharing one rustls connection).
 - `src/protocol.rs` - wire format description, frame encode/decode and port
-  parsing (`8500`, `8500,8600`, `8500:3000`).
+  parsing (`8500`, `8500,8600`, `8500:3000` = public port:app port).
 - `src/auth.rs` - key handling and one-time tokens. `-a` is the key itself or a
-  path to a key file, default `~/.secret/tunnelr-key`. The server creates and
+  path to a key file, default `~/.tunnelr/key`. The server creates and
   saves a random key when the file is missing. The key never goes over the wire:
   `create_token(key)` makes `"<ts>.<nonce>.<hmac-sha256>"`, `TokenVerifier`
   checks the signature, a 60 s TTL and rejects reused nonces. Used by the

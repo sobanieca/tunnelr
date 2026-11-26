@@ -14,6 +14,8 @@ pub struct Args {
     pub to: Option<String>,
     pub bind: Option<String>,
     pub port: Vec<String>,
+    /// `--tunnel-port`, the server's long name for `-p`.
+    pub tunnel_port: Option<String>,
 }
 
 impl Args {
@@ -43,6 +45,7 @@ fn option(name: &str) -> Option<(&'static str, Kind)> {
         "to" => ("to", Kind::Value(|a, v| a.to = Some(v))),
         "bind" => ("bind", Kind::Value(|a, v| a.bind = Some(v))),
         "port" | "p" => ("port", Kind::Value(|a, v| a.port.push(v))),
+        "tunnel-port" => ("tunnel-port", Kind::Value(|a, v| a.tunnel_port = Some(v))),
         _ => return None,
     };
     Some(found)
@@ -116,9 +119,12 @@ mod tests {
         assert_eq!(args.to.as_deref(), Some("10.0.0.2"));
         assert!(args.debug);
 
-        let args = parse_str("server -h -v --foreground --uninstall --bind ::1").unwrap();
+        let args =
+            parse_str("server -h -v --foreground --uninstall --bind ::1 --tunnel-port 20185")
+                .unwrap();
         assert!(args.help && args.version && args.foreground && args.uninstall);
         assert_eq!(args.bind.as_deref(), Some("::1"));
+        assert_eq!(args.tunnel_port.as_deref(), Some("20185"));
         assert_eq!(args.command(), Some("server"));
 
         let args = parse_str("add -- -weird").unwrap();

@@ -174,11 +174,7 @@ fn install(temp: &Path, exe: &Path, binary: &[u8], version: &str) -> Result<(), 
 }
 
 fn cache_file() -> Option<PathBuf> {
-    let base = std::env::var_os("XDG_CACHE_HOME")
-        .filter(|dir| !dir.is_empty())
-        .map(PathBuf::from)
-        .or_else(|| Some(crate::auth::home().join(".cache")))?;
-    Some(base.join("tunnelr").join("latest-version"))
+    Some(crate::auth::data_dir().join("latest-version"))
 }
 
 fn now() -> u64 {

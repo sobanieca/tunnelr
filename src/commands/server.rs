@@ -1,4 +1,4 @@
-//! `tunnelr server [-p <port>]`. As root on Linux with systemd it installs,
+//! `tunnelr server [-p <tunnel port>]`. As root on Linux with systemd it installs,
 //! updates or just checks the service, prints the banner and exits. Inside
 //! the service or with `--foreground` it runs the server in the foreground.
 //! `--uninstall` removes the service.
@@ -14,7 +14,7 @@ use crate::service::{self, SERVICE_NAME, ServiceOptions, ServiceState};
 use crate::signals;
 use std::path::Path;
 
-const DEFAULT_CONTROL_PORT: u16 = 4000;
+const DEFAULT_TUNNEL_PORT: u16 = 4000;
 
 pub fn matches(args: &Args) -> bool {
     args.command() == Some("server")
@@ -49,7 +49,7 @@ fn print_banner(port: u16, key: &str, key_path: &Path, mode: &Mode) {
         String::new()
     } else {
         let list: Vec<&str> = others.iter().map(|a| a.as_str()).collect();
-        format!("\n  Other IPs: {}", list.join(", "))
+        format!("\n  Other IPs:     {}", list.join(", "))
     };
     let footer = match mode {
         Mode::Foreground => String::new(),
@@ -57,17 +57,23 @@ fn print_banner(port: u16, key: &str, key_path: &Path, mode: &Mode) {
             "\nLogs: journalctl -u {SERVICE_NAME} -f    Remove: sudo tunnelr server --uninstall\n"
         ),
     };
+    let key_file = key_path.display();
     logger::plain(format!(
         "
 tunnelr server {VERSION} - {mode_line}
 
-  Address:   {host}{other_ips}
-  Key:       {key}
-  Key file:  {}
+  Address:       {host}{other_ips}
+  Tunnel port:   {port}  (tunnelr clients connect here)
+  Public ports:  any other port open on this VPS, the client picks them with -p
+  Key:           {key}
+  Key file:      {key_file}
+
+On your machine, save the key in ~/.tunnelr/key and run:
+
+  tunnelr {host} -p <public port>:<app port>
 
 Run this command again anytime to see the address and the key.
-{footer}",
-        key_path.display()
+{footer}"
     ));
 }
 
@@ -83,7 +89,7 @@ fn run_foreground(
         bind,
     })?);
     if service::is_inside_service() {
-        logger::info(format!("Listening on port {port}"));
+        logger::info(format!("Listening on tunnel port {port}"));
     } else {
         print_banner(port, key, key_path, &Mode::Foreground);
     }
@@ -113,17 +119,21 @@ fn service_blocker() -> Option<&'static str> {
 
 pub fn execute(args: &Args) -> Result<(), String> {
     if args.positional.len() > 1 {
-        return Err("Use: tunnelr server [-p <control port>] [--uninstall]".to_string());
+        return Err("Use: tunnelr server [-p <tunnel port>] [--uninstall]".to_string());
     }
     if args.uninstall {
         return service::uninstall_service();
     }
-    if args.port.len() > 1 {
-        return Err("Server needs one control port, example: server -p 4000".to_string());
+    let given: Vec<&String> = args.port.iter().chain(&args.tunnel_port).collect();
+    if given.len() > 1 {
+        return Err(
+            "Server needs one tunnel port, example: server -p 4000. Public ports are picked by the client"
+                .to_string(),
+        );
     }
-    let port = match args.port.first() {
-        Some(port) => parse_port(port)?,
-        None => DEFAULT_CONTROL_PORT,
+    let port = match given.first() {
+        Some(port) => parse_port(port).map_err(|_| format!("Invalid tunnel port: {port}"))?,
+        None => DEFAULT_TUNNEL_PORT,
     };
     let (key, key_path) = find_or_create_key(args.auth.as_deref())?;
 

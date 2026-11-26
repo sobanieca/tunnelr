@@ -35,6 +35,8 @@
       --ok-soft: #dff3e6;
       --bad: #b42318;
       --bad-soft: #fde3e0;
+      --app: #2f62b3;
+      --app-soft: #e1eafa;
       --sans: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
       --mono: "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace;
     }
@@ -53,6 +55,8 @@
         --ok-soft: #173826;
         --bad: #f28b82;
         --bad-soft: #4a1d19;
+        --app: #82aef0;
+        --app-soft: #1a2a45;
       }
     }
     :root[data-theme="dark"] {
@@ -69,6 +73,8 @@
       --ok-soft: #173826;
       --bad: #f28b82;
       --bad-soft: #4a1d19;
+      --app: #82aef0;
+      --app-soft: #1a2a45;
     }
 
     * {
@@ -275,6 +281,111 @@
       border-radius: 4px;
     }
 
+    .map .t.p-tunnel {
+      fill: var(--accent);
+    }
+    .map .t.p-public {
+      fill: var(--ok);
+    }
+    .map .t.p-app {
+      fill: var(--app);
+    }
+
+    .ports {
+      padding-block: 52px 10px;
+    }
+    .ports h2 {
+      font-size: 22px;
+      font-weight: 600;
+    }
+    .ports > p {
+      color: var(--muted);
+      font-size: 15.5px;
+      margin-top: 6px;
+    }
+    .port-cards {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .port-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-top: 3px solid var(--c);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .port-card .num {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--c);
+    }
+    .port-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 2px 0 8px;
+    }
+    .port-card dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 10px;
+      font-size: 14.5px;
+    }
+    .port-card dt {
+      color: var(--muted);
+    }
+    .port-card dd {
+      margin: 0;
+    }
+    .port-card code,
+    .ports > p code {
+      font-size: 13px;
+      background: var(--surface-2);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .c-tunnel {
+      --c: var(--accent);
+    }
+    .c-public {
+      --c: var(--ok);
+    }
+    .c-app {
+      --c: var(--app);
+    }
+    .anatomy {
+      margin-top: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      overflow-x: auto;
+    }
+    .anatomy pre {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre;
+    }
+    .anatomy .dim {
+      color: var(--muted);
+    }
+    .anatomy .p-tunnel {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .anatomy .p-public {
+      color: var(--ok);
+      font-weight: 600;
+    }
+    .anatomy .p-app {
+      color: var(--app);
+      font-weight: 600;
+    }
+
     .setup {
       padding-block: 52px 10px;
       display: grid;
@@ -326,6 +437,15 @@
     }
     .col .hl {
       color: var(--accent);
+    }
+    .col .p-tunnel {
+      color: var(--accent);
+    }
+    .col .p-public {
+      color: var(--ok);
+    }
+    .col .p-app {
+      color: var(--app);
     }
 
     .install {
@@ -455,10 +575,10 @@
       <section class="hero">
         <h1>Put localhost on the internet through a VPS you already pay for.</h1>
         <p
-          class="lead"><code class="name">tunnelr</code> is one small binary. Run it as a server on a cheap VPS, run it as a client on your machine, and a public port on the VPS reaches a local port on your laptop.</p>
+          class="lead"><code class="name">tunnelr</code> is one small binary. Run it as a server on a cheap VPS, run it as a client on your machine, and a public port on the VPS reaches the port your app listens on, on your laptop.</p>
 
         <div class="map"
-          aria-label="Diagram: internet visitors reach the VPS public port, which is tunneled to a port on your machine">
+          aria-label="Diagram: internet visitors reach the public port on the VPS, the tunnelr client keeps a tunnel to the tunnel port on the VPS and forwards visitors to the app port on your machine">
           <svg viewBox="0 0 900 200" role="img">
             <text class="t lbl" x="60" y="42"
               text-anchor="middle">INTERNET</text>
@@ -477,10 +597,10 @@
             <rect class="box vps" x="330" y="58" width="240" height="84"
               rx="10" />
             <text class="t" x="350" y="86">tunnelr server</text>
-            <text class="t small" x="350"
-              y="108">:30185  public, forwarded</text>
-            <text class="t small" x="350"
-              y="128">:20185  control (WebSocket)</text>
+            <text class="t small p-public" x="350"
+              y="108">:30185  public port</text>
+            <text class="t small p-tunnel" x="350"
+              y="128">:20185  tunnel port</text>
 
             <path class="tunnel" d="M570 100 H700" />
             <text class="t small" x="635" y="88"
@@ -490,7 +610,7 @@
               text-anchor="middle">YOUR MACHINE</text>
             <rect class="box" x="700" y="58" width="180" height="84" rx="10" />
             <text class="t" x="720" y="86">tunnelr client</text>
-            <text class="t small" x="720" y="108">localhost:3000</text>
+            <text class="t small p-app" x="720" y="108">:3000  app port</text>
             <text class="t small" x="720"
               y="128">behind NAT, no public IP</text>
 
@@ -507,7 +627,7 @@
           </svg>
         </div>
         <p
-          class="caption">A visitor hits the VPS on the public port. The server hands the connection over the tunnel to the client, which opens a TCP connection to the local port. Many connections share one WebSocket.</p>
+          class="caption">A visitor hits the VPS on the <strong>public port</strong>. The client keeps a tunnel open to the server's <strong>tunnel port</strong>, takes the connection over it and opens a TCP connection to the <strong>app port</strong> on your machine. Many connections share one WebSocket.</p>
       </section>
 
       <section class="points">
@@ -517,7 +637,7 @@
         </div>
         <div class="point">
           <h3>Two open ports are enough</h3>
-          <p>Cheap providers expose a couple of ports. One is the control port, the other is your public port. That is the whole requirement.</p>
+          <p>Cheap providers expose a couple of ports. One becomes the tunnel port, the other your public port. That is the whole requirement.</p>
         </div>
         <div class="point">
           <h3>Reconnects on its own</h3>
@@ -529,22 +649,63 @@
         </div>
       </section>
 
+      <section class="ports" id="ports">
+        <h2>Three ports, three names</h2>
+        <p>Every flag, message and help text in tunnelr uses these names. The tunnel port and each public port must be open on the VPS.</p>
+        <div class="port-cards">
+          <div class="port-card c-tunnel">
+            <div class="num">20185</div>
+            <h3>Tunnel port</h3>
+            <dl>
+              <dt>Where</dt><dd>VPS, one per server</dd>
+              <dt>Who</dt><dd>the tunnelr client, and the HTTP API</dd>
+              <dt>Set</dt><dd><code>server -p 20185</code>, client <code>vps:20185</code></dd>
+            </dl>
+          </div>
+          <div class="port-card c-public">
+            <div class="num">30185</div>
+            <h3>Public port</h3>
+            <dl>
+              <dt>Where</dt><dd>VPS, one per forwarded app</dd>
+              <dt>Who</dt><dd>visitors from the internet</dd>
+              <dt>Set</dt><dd>client <code>-p 30185:3000</code>, left side</dd>
+            </dl>
+          </div>
+          <div class="port-card c-app">
+            <div class="num">3000</div>
+            <h3>App port</h3>
+            <dl>
+              <dt>Where</dt><dd>your machine, or the <code>--to</code> host</dd>
+              <dt>Who</dt><dd>tunnelr, to reach your app</dd>
+              <dt>Set</dt><dd>client <code>-p 30185:3000</code>, right side</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="anatomy">
+          <pre><span class="dim">$</span> tunnelr 203.0.113.10:<span class="p-tunnel">20185</span> -p <span class="p-public">30185</span>:<span class="p-app">3000</span>
+<span class="dim">                       │        │     └─</span> <span class="p-app">app port</span><span class="dim">     where your app listens</span>
+<span class="dim">                       │        └───────</span> <span class="p-public">public port</span><span class="dim">  what visitors open</span>
+<span class="dim">                       └────────────────</span> <span class="p-tunnel">tunnel port</span><span class="dim">  where the server listens</span></pre>
+        </div>
+      </section>
+
       <section class="setup">
         <h2>Setup, in full</h2>
         <div class="col">
           <h3>VPS <span>once</span></h3>
-          <pre><span class="dim">$</span> curl -fsSL adam.sobaniec.com/tunnelr/install.sh | bash
-<span class="dim">$</span> sudo tunnelr server -p 20185
-<span class="dim">  Address:   203.0.113.10:20185
-  Key:       </span><span class="hl">kD3xW9q1mZ8pR4tY7uH2cV6bN0aS5fGj</span>
-<span class="dim">  Key file:  /root/.secret/tunnelr-key</span></pre>
+          <pre><span class="dim">$</span> curl -fsSL adam.sobaniec.com/tunnelr/install.sh | sudo bash
+<span class="dim">$</span> sudo tunnelr server -p <span class="p-tunnel">20185</span>
+<span class="dim">  Address:       203.0.113.10:20185
+  Tunnel port:   </span><span class="p-tunnel">20185</span>
+<span class="dim">  Key:           </span><span class="hl">kD3xW9q1mZ8pR4tY7uH2cV6bN0aS5fGj</span>
+<span class="dim">  Key file:      /root/.tunnelr/key</span></pre>
         </div>
         <div class="col">
           <h3>Your machine <span>whenever</span></h3>
           <pre><span class="dim">$</span> curl -fsSL adam.sobaniec.com/tunnelr/install.sh | bash
-<span class="dim">$</span> echo kD3x… &gt; ~/.secret/tunnelr-key
-<span class="dim">$</span> tunnelr 203.0.113.10:20185 -p <span class="hl">30185:3000</span>
-<span class="dim">  203.0.113.10:30185 → localhost:3000   Ctrl+C closes it</span></pre>
+<span class="dim">$</span> echo kD3x… &gt; ~/.tunnelr/key
+<span class="dim">$</span> tunnelr 203.0.113.10:<span class="p-tunnel">20185</span> -p <span class="p-public">30185</span>:<span class="p-app">3000</span>
+<span class="dim">  203.0.113.10:</span><span class="p-public">30185</span><span class="dim"> → 127.0.0.1:</span><span class="p-app">3000</span><span class="dim">   Ctrl+C closes it</span></pre>
         </div>
       </section>
 
@@ -555,8 +716,8 @@
             id="install-cmd">curl -fsSL adam.sobaniec.com/tunnelr/install.sh | bash</code>
           <button type="button" id="copy-btn">Copy</button>
         </div>
-        <p>Same command on the VPS and on your machine: a single binary for Linux and macOS (x64 and arm64), no runtime needed. Debian is the tested server OS. Update it any time with <code>tunnelr update</code>. <code>tunnelr --help</code> lists every option and the small HTTP API for listing and closing ports.</p>
-        <p>It installs to <code>/usr/local/bin</code>, for all users. If you can't write there, run it with <code>sudo bash</code> instead of <code>bash</code>, or install to a custom location: set <code>INSTALL_DIR</code> to a directory on your <code>PATH</code>, as in <code>curl -fsSL adam.sobaniec.com/tunnelr/install.sh | INSTALL_DIR=~/.local/bin bash</code>.</p>
+        <p>Same command on the VPS and on your machine: a single binary for Linux and macOS (x64 and arm64), no runtime needed. Debian is the tested server OS. Update it any time with <code>tunnelr update</code>. <code>tunnelr --help</code> lists every option and the small HTTP API (on the tunnel port) for listing and closing public ports.</p>
+        <p>It installs to <code>~/.tunnelr/bin</code>, with no <code>sudo</code> needed, and asks to add that folder to your <code>PATH</code> in your shell's startup file. Set <code>TUNNELR_NO_MODIFY_PATH=1</code> to leave the file unchanged, or install to another folder with <code>INSTALL_DIR</code>, as in <code>curl -fsSL adam.sobaniec.com/tunnelr/install.sh | INSTALL_DIR=~/.local/bin bash</code>. On the VPS, pipe it to <code>sudo bash</code>: run as root, it installs to <code>/usr/local/bin</code>, where <code>sudo tunnelr server</code> finds it.</p>
       </section>
 
       <footer>
